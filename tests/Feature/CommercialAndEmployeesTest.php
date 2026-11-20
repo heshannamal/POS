@@ -178,4 +178,30 @@ class CommercialAndEmployeesTest extends TestCase
         ])->assertForbidden();
         $this->actingAs($cashier)->get(route('business.subscription.index', $tenant))->assertOk();
     }
+
+    public function test_owner_can_view_staff_pages_invite_verified_users_and_change_access(): void
+    {
+        $owner = User::factory()->create();
+        $tenant = $this->tenant($owner);
+        $cashier = Role::where('tenant_id', $tenant->id)->where('slug', 'cashier')->firstOrFail();
+        $employee = User::factory()->create(['email' => 'invited@example.com']);
+        $anotherTenant = $this->tenant(User::factory()->create(), 'Unrelated Tenant');
+        $otherRole = Role::where('tenant_id', $anotherTenant->id)->where('slug', 'manager')->firstOrFail();
+
+        $this->actingAs($owner)->get(route('business.employees.index', $tenant))->assertOk();
+        $this->actingAs($owner)->get(route('business.roles.index', $tenant))->assertOk();
+
+        $this->actingAs($owner)->post(route('business.employees.invite', $tenant), [
+            'email' => 'invited@example.com', 'role_id' => $otherRole->id,
+        ])->assertSessionHasErrors('role_id');
+
+        $this->actingAs($owner)->post(route('business.employees.invite', $tenant), [
+            'email' => 'invited@example.com', 'role_id' => $cashier->id,
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('staff_invitations', [
+            'tenant_id' => $tenant->id, 'email' => 'invited@example.com', 'role_id' => $cashier->id,
+        ]);
+        $this->assertFalse($tenant->users()->whereKey($employee->id)->exists());
+    }
 }
