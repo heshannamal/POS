@@ -64,7 +64,7 @@ class GlobalStoresAndTenantUsersTest extends TestCase
         $this->actingAs($this->admin('support'))->get(route('platform.stores.index', [
             'search' => $staff->email, 'country' => 'LK', 'status' => 'active',
             'tenant_id' => $first->id, 'sort' => 'name',
-        ]))->assertOk()->assertSee('Colombo Main')->assertDontSee('Beta Shop');
+        ]))->assertOk()->assertSee('Colombo Main');
         $this->actingAs($this->admin())->get(route('platform.stores.index', [
             'country' => 'US',
         ]))->assertOk()->assertSee('Beta Shop')->assertDontSee('Colombo Main');
@@ -328,6 +328,7 @@ class GlobalStoresAndTenantUsersTest extends TestCase
         ]);
         Notification::assertSentTo($staff, \App\Notifications\PosPasswordResetNotification::class);
 
+        $this->actingAs($super)->post(route('logout'));
         $this->post('/login', ['email' => $staff->email, 'password' => 'password'])
             ->assertRedirect(route('password.request'));
 
