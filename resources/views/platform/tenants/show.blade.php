@@ -8,7 +8,10 @@
     $canBill = in_array($role, ['super_admin','billing'], true);
 @endphp
 <div class="page-head">
-    <div><span class="overline">BUSINESS DETAILS</span><h1>{{ $tenant->name }}</h1><p class="muted">{{ $tenant->slug }} · Created {{ $tenant->created_at->format('d M Y') }}</p></div>
+    <div class="tenant-profile-head">
+        @if($tenant->logo_path)<img src="{{ route('platform.tenants.logo',$tenant) }}" class="tenant-logo-header" alt="{{ $tenant->name }} logo">@else<span class="circle-initial tenant-logo-placeholder">{{ mb_strtoupper(mb_substr($tenant->name,0,1)) }}</span>@endif
+        <div><span class="overline">BUSINESS DETAILS</span><h1>{{ $tenant->name }}</h1><p class="muted">{{ $tenant->slug }} · Created {{ $tenant->created_at->format('d M Y') }}</p></div>
+    </div>
     <div class="page-actions"><span class="status status-{{ $tenant->effective_status }}">{{ ucfirst($tenant->effective_status) }}</span>@if($canOperate)<a class="btn btn-outline" href="{{ route('platform.tenants.index') }}">← All businesses</a>@elseif($canBill)<a class="btn btn-outline" href="{{ route('platform.subscriptions.index') }}">← Subscriptions</a>@else<a class="btn btn-outline" href="{{ route('platform.support.index') }}">← Support</a>@endif</div>
 </div>
 <div class="detail-grid">
@@ -16,7 +19,11 @@
         <div class="panel-heading"><div><h2>Business profile</h2><p class="muted">Core tenant information</p></div></div>
         <dl class="detail-list">
             <div><dt>Contact email</dt><dd>{{ $tenant->contact_email ?? '—' }}</dd></div>
+            <div><dt>Contact person</dt><dd>{{ $tenant->contact_person ?? '—' }}</dd></div>
             <div><dt>Phone</dt><dd>{{ $tenant->phone ?? '—' }}</dd></div>
+            <div><dt>Country</dt><dd>{{ $tenant->country ?? '—' }}</dd></div>
+            <div><dt>Registration no.</dt><dd>{{ $tenant->registration_number ?? '—' }}</dd></div>
+            <div><dt>Website</dt><dd>@if($tenant->website)<a href="{{ $tenant->website }}" target="_blank" rel="noopener noreferrer" class="text-link">Visit website</a>@else — @endif</dd></div>
             <div><dt>Address</dt><dd>{{ $tenant->address ?? '—' }}</dd></div>
             <div><dt>Currency</dt><dd>{{ $tenant->currency }}</dd></div>
             <div><dt>Timezone</dt><dd>{{ $tenant->timezone }}</dd></div>
@@ -69,19 +76,33 @@
     </section>
     @if($canOperate)
     <section class="panel panel-wide">
-        <div class="panel-heading"><div><h2>Account status</h2><p class="muted">Administrative override — subscription payments are not yet integrated</p></div></div>
-        <form method="POST" action="{{ route('platform.tenants.status', $tenant) }}" class="inline-form">@csrf @method('PATCH')
-            <label for="status">Business status</label>
-            <select id="status" name="status">
-                <option value="trial" @selected($tenant->status === 'trial') @disabled($role === 'operations' && $tenant->trial?->converted_at)>Trial</option>
-                @if($role === 'super_admin' || ($tenant->status === 'suspended' && $tenant->subscription?->source === 'manual') || $tenant->status === 'active')
-                    <option value="active" @selected($tenant->status === 'active')>Active (manual)</option>
+        <div class="panel-heading"><div><h2>Business access & lifecycle</h2><p class="muted">Temporarily deactivate, suspend or restore access. Plans and subscription dates are preserved.</p></div></div>
+        <div class="tenant-lifecycle-summary">
+            <span class="status status-{{ $tenant->effective_status }}">{{ ucfirst($tenant->effective_status) }}</span>
+            @if($tenant->lifecycle_previous_status)<span class="muted">Previous access: {{ ucfirst($tenant->lifecycle_previous_status) }}</span>@endif
+            <span class="muted">This is different from deactivating a trial or editing a paid subscription.</span>
+        </div>
+        <form method="POST" action="{{ route('platform.tenants.lifecycle.update',$tenant) }}" class="form-stack">
+            @csrf @method('PATCH')
+            <label for="lifecycle_action">Access action</label>
+            <select name="action" id="lifecycle_action" required>
+                @if(in_array($tenant->status,['active','trial','suspended']))
+                    <option value="deactivate">Deactivate business access</option>
                 @endif
-                <option value="suspended" @selected($tenant->status === 'suspended')>Suspended</option>
+                @if(in_array($tenant->status,['active','trial','inactive']))
+                    <option value="suspend">Suspend business</option>
+                @endif
+                @if(in_array($tenant->status,['inactive','suspended']))
+                    <option value="reactivate">Restore previous access state</option>
+                @endif
             </select>
-            <input name="reason" type="text" maxlength="1000" placeholder="Reason (required when suspending)">
-            <button class="btn btn-primary" type="submit" data-confirm="Update this business account status?">Save status</button>
+            <label for="lifecycle_reason">Internal reason</label>
+            <input name="reason" id="lifecycle_reason" minlength="5" maxlength="1000" required placeholder="Reason for this status change">
+            <button class="btn btn-secondary" type="submit" data-confirm="Change business access, preserving its existing subscription and data?">Apply access change</button>
         </form>
+        @if($role === 'super_admin' && $tenant->status === 'trial')
+            <div class="hint-box" style="margin-top:14px">To grant a permanent/manual subscription, use Plan & Manual Activation below. Access restoration alone never creates a paid entitlement.</div>
+        @endif
     </section>
     @endif
 </div>
@@ -134,6 +155,34 @@
 @endif
 @if($canOperate)
     @include('platform.tenants.partials.operations')
+@endif
+@if(auth()->user()->isPermanentPlatformAdmin() && $role === 'super_admin')
+<div class="dashboard-grid lower-grid">
+    <section class="panel panel-wide">
+        <div class="panel-heading"><div><h2>Tenant data export</h2><p class="muted">Download a portable JSON snapshot of tenant business records. Requires your current administrator password.</p></div></div>
+        <form method="POST" action="{{ route('platform.tenants.export',$tenant) }}" class="form-stack">
+            @csrf
+            <label for="export_password">Confirm permanent Super Admin password</label>
+            <input id="export_password" name="admin_password" type="password" autocomplete="current-password" required>
+            <button class="btn btn-outline" type="submit">Export tenant JSON ↓</button>
+        </form>
+        <p class="muted">Internal notes, administrator secrets and private uploaded payment files are excluded. Export downloads are audited.</p>
+    </section>
+    <section class="panel">
+        <div class="panel-heading"><div><h2>Archive business</h2><p class="muted">Reversible soft-delete. Normal tenant routes will stop resolving the workspace.</p></div></div>
+        <form method="POST" action="{{ route('platform.tenants.archive',$tenant) }}" class="form-stack">
+            @csrf
+            <label for="archive_confirmation">Type the exact business slug to confirm</label>
+            <input id="archive_confirmation" name="confirmation" required placeholder="{{ $tenant->slug }}" autocomplete="off">
+            <label for="archive_reason">Reason for archiving (at least 10 characters)</label>
+            <input id="archive_reason" name="reason" required minlength="10" maxlength="1000" placeholder="Requested by owner / business closure">
+            <label for="archive_admin_password">Permanent Super Admin password</label>
+            <input id="archive_admin_password" type="password" name="admin_password" autocomplete="current-password" required>
+            <button type="submit" class="btn btn-outline" data-confirm="Archive this business? All normal tenant routes will become unavailable until restored.">Archive business</button>
+        </form>
+        <p class="muted">No permanent delete is available here. Restore from Archived Businesses.</p>
+    </section>
+</div>
 @endif
 <section class="panel" style="margin-top:16px">
     <div class="panel-heading"><div><h2>Recent activity</h2><p class="muted">Latest audited events for this business</p></div></div>

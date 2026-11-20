@@ -443,3 +443,40 @@ button[disabled] { cursor: not-allowed; opacity: .55; }
     .trial-action-stack { min-width: 215px; }
     .trial-inline-form input[type="text"] { min-width: 130px; }
 }
+
+
+/* Advanced tenant operations — responsive, light/dark friendly */
+.tenant-filters {
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(165px,1fr));
+    gap:14px; padding:0 0 20px; align-items:end;
+}
+.tenant-filters label,.tenant-fields-grid label {
+    display:flex; flex-direction:column; gap:8px;
+    color:var(--subtext);font-weight:700;font-size:12px;
+}
+.tenant-filters input,.tenant-filters select,.tenant-fields-grid input {
+    width:100%; min-width:0;
+}
+.tenant-filter-actions{display:flex;gap:8px;flex-wrap:wrap;}
+.tenant-fields-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;}
+.tenant-profile-head{display:flex;align-items:center;gap:17px;}
+.tenant-logo-header{width:74px;height:74px;object-fit:contain;border-radius:18px;padding:7px;border:1px solid var(--border);background:var(--panel);}
+.tenant-logo-small{height:38px;width:38px;border-radius:12px;padding:3px;object-fit:contain;background:var(--panel);border:1px solid var(--border);}
+.tenant-logo-placeholder{font-size:22px;width:60px;height:60px;border-radius:17px;}
+.tenant-logo-preview{display:block;width:110px;height:110px;border-radius:17px;object-fit:contain;border:1px solid var(--border);background:var(--panel);padding:6px;}
+.tenant-logo-upload{display:flex;align-items:center;gap:15px;margin:10px 0 20px;}
+.tenant-progress{height:7px;min-width:85px;max-width:170px;background:var(--panel-muted);border-radius:100px;overflow:hidden;margin-top:6px;}
+.tenant-progress span{display:block;height:100%;background:var(--primary);border-radius:100px;transition:width .25s ease;}
+.tenant-progress-large{display:grid;gap:8px;margin:12px 0 20px;}
+.tenant-progress-large .tenant-progress{max-width:none;}
+.tenant-lifecycle-summary{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:17px;}
+.tenant-note-feed{display:grid;gap:12px;margin-top:19px;}
+.tenant-note{padding:16px;background:var(--panel-muted);border:1px solid var(--border);border-radius:16px;}
+.tenant-note p{margin:0 0 14px;color:var(--text);white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.65;}
+.tenant-note-remove{display:flex;gap:9px;flex-wrap:wrap;}
+.tenant-note-remove input{flex:1;min-width:160px;}
+.tenant-archive-form{display:grid;gap:7px;min-width:210px;}
+.tenant-archive-form input{width:100%;}
+.status-archived {background:var(--panel-muted);color:var(--subtext);}
+@media(max-width:720px){.tenant-fields-grid{grid-template-columns:1fr;}.tenant-profile-head{align-items:flex-start;}.tenant-logo-header{width:56px;height:56px;}.tenant-filters{grid-template-columns:1fr 1fr;}.tenant-filter-actions{grid-column:1/-1;}}
+@media(max-width:460px){.tenant-filters{grid-template-columns:1fr;}}
