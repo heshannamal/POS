@@ -41,14 +41,14 @@ class PlanController extends Controller
 
     private function validated(Request $request, ?Plan $plan = null): array
     {
-        return $request->validate([
+        $data = $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'slug' => ['required', 'alpha_dash', 'max:80', Rule::unique('plans', 'slug')->ignore($plan?->id)],
             'description' => ['nullable', 'string', 'max:1500'],
             'monthly_price' => ['required', 'numeric', 'min:0', 'max:10000000', 'decimal:0,2'],
             'yearly_price' => ['nullable', 'numeric', 'min:0', 'max:10000000', 'decimal:0,2'],
             'currency' => ['required', Rule::in(['LKR', 'USD'])],
-            'is_discount_available' => ['required', 'boolean'],
+            'is_discount_available' => ['sometimes', 'boolean'],
             'discount_percentage' => ['nullable', 'required_if:is_discount_available,1', 'numeric', 'min:0.01', 'max:99.99', 'decimal:0,2'],
             'is_active' => ['required', 'boolean'],
             'is_public' => ['required', 'boolean'],
@@ -57,6 +57,8 @@ class PlanController extends Controller
             'modules' => ['nullable', 'array'],
             'modules.*' => ['integer', 'distinct', 'exists:modules,id'],
         ]);
+        $data['is_discount_available'] = (bool) ($data['is_discount_available'] ?? false);
+        return $data;
     }
 
     private function toMinorUnits(string $amount): int
