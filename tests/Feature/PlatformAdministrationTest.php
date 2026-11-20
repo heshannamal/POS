@@ -223,6 +223,7 @@ class PlatformAdministrationTest extends TestCase
         $this->assertSame(21, PlatformSetting::trialDays());
         $this->assertSame('USD', PlatformSetting::defaultCurrency());
 
+        $this->post(route('logout'))->assertRedirect();
         $this->get(route('register'))->assertForbidden();
         $this->post(route('register'), [
             'name' => 'Blocked', 'email' => 'blocked@example.com',
