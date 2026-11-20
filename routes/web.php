@@ -11,6 +11,12 @@ use App\Http\Controllers\Platform\ModuleController;
 use App\Http\Controllers\Platform\AdminTeamController;
 use App\Http\Controllers\Platform\SettingsController;
 use App\Http\Controllers\Platform\BusinessOperationsController;
+use App\Http\Controllers\Platform\TenantNotesController;
+use App\Http\Controllers\Platform\TenantOnboardingController;
+use App\Http\Controllers\Platform\TenantLifecycleController;
+use App\Http\Controllers\Platform\TenantArchiveController;
+use App\Http\Controllers\Platform\TenantExportController;
+use App\Http\Controllers\TenantLogoController;
 use App\Http\Controllers\Platform\SubscriptionRegistryController;
 use App\Http\Controllers\Platform\ReportsController;
 use App\Http\Controllers\Platform\AuditController;
@@ -89,6 +95,7 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
         ->middleware('tenant.member')->group(function (): void {
             Route::get('/dashboard', [BusinessDashboardController::class, 'index'])->name('dashboard');
             Route::get('/subscription', [BusinessSubscriptionController::class, 'index'])->name('subscription.index');
+            Route::get('/logo', [TenantLogoController::class, 'show'])->name('logo.show');
             Route::post('/subscription/payments', [BusinessPaymentController::class, 'store'])
                 ->middleware(['tenant.permission:settings.manage', 'throttle:5,1'])->name('subscription.payments.store');
             Route::get('/subscription/payments/{payment}/evidence', [BusinessPaymentController::class, 'receipt'])
@@ -121,6 +128,17 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
         ->middleware('platform.admin')->group(function (): void {
             Route::get('/dashboard', [PlatformDashboard::class, 'index'])->name('dashboard');
 
+            Route::get('/businesses/archived', [TenantArchiveController::class, 'index'])
+                ->middleware('platform.permanent')->name('tenants.archived');
+            Route::post('/businesses/archived/{tenantId}/restore', [TenantArchiveController::class, 'restore'])
+                ->middleware(['platform.permanent', 'throttle:5,1'])->name('tenants.restore');
+            Route::post('/businesses/{tenant:slug}/archive', [TenantArchiveController::class, 'archive'])
+                ->middleware(['platform.permanent', 'throttle:5,1'])->name('tenants.archive');
+            Route::post('/businesses/{tenant:slug}/export', [TenantExportController::class, 'download'])
+                ->middleware(['platform.permanent', 'throttle:5,1'])->name('tenants.export');
+            Route::get('/businesses/{tenant:slug}/logo', [TenantLogoController::class, 'show'])
+                ->middleware('platform.role:operations,billing,support')->name('tenants.logo');
+
             Route::get('/businesses/{tenant:slug}', [PlatformTenants::class, 'show'])
                 ->middleware('platform.role:operations,billing,support')->name('tenants.show');
 
@@ -135,6 +153,18 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
                 Route::get('/businesses', [PlatformTenants::class, 'index'])->name('tenants.index');
                 Route::get('/businesses/create', [PlatformTenants::class, 'create'])->name('tenants.create');
                 Route::post('/businesses', [PlatformTenants::class, 'store'])->name('tenants.store');
+                Route::post('/businesses/{tenant:slug}/logo', [BusinessOperationsController::class, 'uploadLogo'])
+                    ->name('tenants.logo.upload');
+                Route::delete('/businesses/{tenant:slug}/logo', [BusinessOperationsController::class, 'deleteLogo'])
+                    ->name('tenants.logo.delete');
+                Route::post('/businesses/{tenant:slug}/notes', [TenantNotesController::class, 'store'])
+                    ->name('tenants.notes.store');
+                Route::delete('/businesses/{tenant:slug}/notes/{note}', [TenantNotesController::class, 'destroy'])
+                    ->name('tenants.notes.destroy');
+                Route::patch('/businesses/{tenant:slug}/onboarding', [TenantOnboardingController::class, 'update'])
+                    ->name('tenants.onboarding.update');
+                Route::patch('/businesses/{tenant:slug}/lifecycle', [TenantLifecycleController::class, 'update'])
+                    ->name('tenants.lifecycle.update');
                 Route::put('/businesses/{tenant:slug}/profile', [BusinessOperationsController::class, 'profile'])
                     ->name('tenants.profile');
                 Route::post('/businesses/{tenant:slug}/branches', [BusinessOperationsController::class, 'storeBranch'])

@@ -11,6 +11,8 @@ use App\Models\Trial;
 use App\Models\TrialEvent;
 use App\Models\User;
 use App\Services\CreateTenant;
+use App\Services\TenantLifecycle;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -22,23 +24,67 @@ class TenantController extends Controller
 {
     public function index(Request $request): View
     {
-        $query = Tenant::query()->with('trial')->withCount('users');
+        $filters = $request->validate([
+            'search' => ['nullable', 'string', 'max:120'],
+            'status' => ['nullable', Rule::in(['trial', 'trial_inactive', 'expired', 'active', 'inactive', 'suspended'])],
+            'plan' => ['nullable', 'string', 'max:100'],
+            'country' => ['nullable', 'string', 'regex:/^[a-zA-Z]{2}$/'],
+            'from' => ['nullable', 'date_format:Y-m-d'],
+            'to' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:from'],
+            'sort' => ['nullable', Rule::in(['created_at', 'name', 'status', 'country'])],
+            'direction' => ['nullable', Rule::in(['asc', 'desc'])],
+            'per_page' => ['nullable', 'integer', Rule::in([12, 25, 50])],
+        ]);
 
-        if ($search = trim((string) $request->query('search', ''))) {
+        $query = Tenant::query()
+            ->with(['trial', 'subscription.plan'])
+            ->withCount(['users', 'branches']);
+
+        if ($search = trim((string) ($filters['search'] ?? ''))) {
             $query->where(fn ($q) => $q->where('name', 'like', '%'.$search.'%')
                 ->orWhere('contact_email', 'like', '%'.$search.'%')
-                ->orWhere('slug', 'like', '%'.$search.'%'));
+                ->orWhere('contact_person', 'like', '%'.$search.'%')
+                ->orWhere('slug', 'like', '%'.$search.'%')
+                ->orWhereHas('users', fn ($owners) => $owners->where('email', 'like', '%'.$search.'%')));
         }
 
-        if ($status = $request->query('status')) {
-            if (in_array($status, ['trial', 'active', 'suspended'], true)) {
+        if ($status = $filters['status'] ?? null) {
+            if ($status === 'trial') {
+                $query->where('status', 'trial')->whereHas('trial',
+                    fn ($q) => $q->where('is_active', true)->where('ends_at', '>', now()));
+            } elseif ($status === 'trial_inactive') {
+                $query->where('status', 'trial')->whereHas('trial',
+                    fn ($q) => $q->where('is_active', false));
+            } elseif ($status === 'expired') {
+                $query->where('status', 'trial')->whereHas('trial',
+                    fn ($q) => $q->where('is_active', true)->where('ends_at', '<=', now()));
+            } else {
                 $query->where('status', $status);
             }
         }
 
-        $tenants = $query->latest()->paginate(12)->withQueryString();
+        if ($plan = $filters['plan'] ?? null) {
+            $query->whereHas('subscription.plan', fn ($q) => $q->where('slug', $plan));
+        }
+        if ($country = $filters['country'] ?? null) {
+            $query->where('country', strtoupper($country));
+        }
+        if ($from = $filters['from'] ?? null) {
+            $query->whereDate('created_at', '>=', $from);
+        }
+        if ($to = $filters['to'] ?? null) {
+            $query->whereDate('created_at', '<=', $to);
+        }
 
-        return view('platform.tenants.index', compact('tenants'));
+        $sort = $filters['sort'] ?? 'created_at';
+        $direction = $filters['direction'] ?? 'desc';
+        $tenants = $query->orderBy($sort, $direction)->orderBy('id', 'desc')
+            ->paginate((int) ($filters['per_page'] ?? 12))->withQueryString();
+        $plans = Plan::orderBy('name')->get(['id', 'slug', 'name']);
+        $countries = Tenant::whereNotNull('country')->distinct()->orderBy('country')
+            ->pluck('country');
+
+        return view('platform.tenants.index', compact('tenants', 'plans', 'countries'));
     }
 
     public function create(): View
@@ -53,6 +99,11 @@ class TenantController extends Controller
             'owner_email' => ['required', 'email', 'exists:users,email'],
             'contact_email' => ['nullable', 'email', 'max:191'],
             'phone' => ['nullable', 'string', 'max:30'],
+            'contact_person' => ['nullable', 'string', 'max:150'],
+            'country' => ['nullable', 'string', 'regex:/^[a-zA-Z]{2}$/'],
+            'website' => ['nullable', 'url:http,https', 'max:255'],
+            'registration_number' => ['nullable', 'string', 'max:100'],
+            'logo' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
             'address' => ['nullable', 'string', 'max:1000'],
         ]);
 
@@ -64,7 +115,34 @@ class TenantController extends Controller
             ]);
         }
 
-        $tenant = $service->handle($owner, $input, $request->user());
+        if (! empty($input['country'])) {
+            $input['country'] = strtoupper($input['country']);
+        }
+
+        $storedLogo = null;
+        try {
+            $tenant = DB::transaction(function () use ($service, $owner, $input, $request, &$storedLogo): Tenant {
+                $tenant = $service->handle($owner, $input, $request->user());
+                if ($request->hasFile('logo')) {
+                    $storedLogo = $request->file('logo')->store('tenant-logos/'.$tenant->id, 'local');
+                    if (! $storedLogo) {
+                        throw ValidationException::withMessages(['logo' => 'The logo upload failed.']);
+                    }
+                    $tenant->update(['logo_path' => $storedLogo]);
+                    AuditLog::create([
+                        'tenant_id' => $tenant->id, 'actor_id' => $request->user()->id,
+                        'action' => 'tenant.logo.updated', 'subject_type' => Tenant::class,
+                        'subject_id' => $tenant->id, 'ip_address' => $request->ip(),
+                    ]);
+                }
+                return $tenant;
+            });
+        } catch (\Throwable $e) {
+            if ($storedLogo) {
+                Storage::disk('local')->delete($storedLogo);
+            }
+            throw $e;
+        }
 
         return redirect()->route('platform.tenants.show', $tenant)
             ->with('status', 'Business created and trial activated.');
@@ -79,63 +157,67 @@ class TenantController extends Controller
         $activity = AuditLog::where('tenant_id', $tenant->id)->with('actor:id,name')
             ->latest('id')->limit(12)->get();
 
-        return view('platform.tenants.show', compact('tenant', 'plans', 'modules', 'activity'));
+        $notes = in_array(auth()->user()->platformRole(), ['super_admin', 'operations'], true)
+            ? $tenant->notes()->with('author:id,name')->latest('id')->paginate(10, ['*'], 'notes_page')
+            : collect();
+
+        return view('platform.tenants.show', compact('tenant', 'plans', 'modules', 'activity', 'notes'));
     }
 
-    public function status(Request $request, Tenant $tenant): RedirectResponse
+    public function status(Request $request, Tenant $tenant, TenantLifecycle $lifecycle): RedirectResponse
     {
         $data = $request->validate([
-            'status' => ['required', Rule::in(['trial', 'active', 'suspended'])],
-            'reason' => ['nullable', 'string', 'max:1000', 'required_if:status,suspended'],
+            'status' => ['required', Rule::in(['trial', 'active', 'suspended', 'inactive'])],
+            'reason' => ['nullable', 'string', 'max:1000', 'required_if:status,suspended,inactive'],
         ]);
 
-        // Operations can suspend businesses and restore an already-manual
-        // subscription, but cannot convert a free trial to a paid-license state.
-        if ($request->user()->platformRole() === 'operations') {
-            if ($data['status'] === 'active') {
-                $restoring = $tenant->status === 'suspended'
-                    && $tenant->subscription?->source === 'manual';
-                abort_unless($restoring, 403, 'Only billing administrators can activate a trial subscription.');
-            }
-            if ($data['status'] === 'trial' && $tenant->trial?->converted_at) {
-                abort(403, 'A converted business cannot be returned to trial by operations staff.');
-            }
-        }
+        $current = $tenant->status;
+        $target = $data['status'];
+        $reason = trim((string) ($data['reason'] ?? ''));
 
-        DB::transaction(function () use ($request, $tenant, $data): void {
-            $before = $tenant->status;
-            $tenant->update(['status' => $data['status']]);
-
-            if ($before === 'trial' && $data['status'] === 'active') {
-                $tenant->subscription()->update(['status' => 'active', 'source' => 'manual', 'started_at' => now(), 'ends_at' => null]);
-                $tenant->trial()->update(['converted_at' => now()]);
+        if ($target === 'suspended' || $target === 'inactive') {
+            if (mb_strlen($reason) < 5) {
+                throw ValidationException::withMessages(['reason' => 'Give a reason of at least five characters.']);
+            }
+            $lifecycle->change(
+                $tenant, $request->user(), $target === 'suspended' ? 'suspend' : 'deactivate',
+                $reason, $request->ip()
+            );
+        } elseif (in_array($current, ['suspended', 'inactive'], true)
+            && $tenant->lifecycle_previous_status === $target) {
+            $lifecycle->change($tenant, $request->user(), 'reactivate',
+                $reason ?: 'Restored by platform administrator', $request->ip());
+        } elseif ($target === 'active' && $current === 'trial' && $request->user()->platformRole() === 'super_admin') {
+            // Backward compatibility for the existing super-admin manual activation;
+            // Operations cannot create a paid entitlement.
+            DB::transaction(function () use ($tenant, $request): void {
+                $locked = Tenant::whereKey($tenant->id)->lockForUpdate()->firstOrFail();
+                abort_unless($locked->status === 'trial', 409);
+                $locked->update(['status' => 'active', 'lifecycle_previous_status' => null]);
+                $locked->subscription()->update([
+                    'status' => 'active', 'source' => 'manual', 'started_at' => now(), 'ends_at' => null,
+                ]);
+                $locked->trial()->update(['converted_at' => now()]);
                 TrialEvent::create([
-                    'trial_id' => $tenant->trial()->value('id'),
+                    'trial_id' => $locked->trial()->value('id'),
                     'actor_id' => $request->user()->id,
                     'action' => 'manually_activated',
                 ]);
-            }
-
-            if ($data['status'] === 'suspended') {
-                $tenant->subscription()->update(['status' => 'paused']);
-            } elseif ($data['status'] === 'trial') {
-                $tenant->subscription()->update(['status' => 'trialing', 'source' => 'trial']);
-            } elseif ($data['status'] === 'active') {
-                $tenant->subscription()->update(['status' => 'active', 'source' => 'manual']);
-            }
-
-            AuditLog::create([
-                'tenant_id' => $tenant->id,
-                'actor_id' => $request->user()->id,
-                'action' => 'tenant.status.changed',
-                'subject_type' => Tenant::class,
-                'subject_id' => $tenant->id,
-                'metadata' => ['from' => $before, 'to' => $data['status'], 'reason' => $data['reason'] ?? null],
-                'ip_address' => $request->ip(),
+                AuditLog::create([
+                    'tenant_id' => $locked->id, 'actor_id' => $request->user()->id,
+                    'action' => 'tenant.status.changed',
+                    'subject_type' => Tenant::class, 'subject_id' => $locked->id,
+                    'metadata' => ['from' => 'trial', 'to' => 'active', 'source' => 'manual'],
+                    'ip_address' => $request->ip(),
+                ]);
+            });
+        } else {
+            throw ValidationException::withMessages([
+                'status' => 'Use Deactivate, Suspend or Restore. Plan activation must go through Billing.',
             ]);
-        });
+        }
 
-        return back()->with('status', 'Business status updated.');
+        return back()->with('status', 'Business lifecycle status updated safely.');
     }
 
     public function extendTrial(Request $request, Tenant $tenant): RedirectResponse

@@ -37,6 +37,7 @@ class CreateTenant
                 'name' => $input['name'],
                 'slug' => $slug,
                 'contact_email' => $input['contact_email'] ?? $owner->email,
+                'contact_person' => $input['contact_person'] ?? null,
                 'phone' => $input['phone'] ?? null,
                 'address' => $input['address'] ?? null,
                 'country' => $input['country'] ?? null,
