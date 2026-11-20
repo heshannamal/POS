@@ -45,6 +45,11 @@ class Tenant extends Model
         return $this->hasOne(Subscription::class);
     }
 
+    public function paymentRequests(): HasMany
+    {
+        return $this->hasMany(SubscriptionPaymentRequest::class);
+    }
+
     public function moduleGrants(): HasMany
     {
         return $this->hasMany(TenantModuleGrant::class);

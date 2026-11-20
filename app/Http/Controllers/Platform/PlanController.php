@@ -46,6 +46,7 @@ class PlanController extends Controller
             'slug' => ['required', 'alpha_dash', 'max:80', Rule::unique('plans', 'slug')->ignore($plan?->id)],
             'description' => ['nullable', 'string', 'max:1500'],
             'monthly_price' => ['required', 'numeric', 'min:0', 'max:10000000', 'decimal:0,2'],
+            'yearly_price' => ['nullable', 'numeric', 'min:0', 'max:10000000', 'decimal:0,2'],
             'currency' => ['required', Rule::in(['LKR', 'USD'])],
             'is_active' => ['required', 'boolean'],
             'is_public' => ['required', 'boolean'],
@@ -56,6 +57,12 @@ class PlanController extends Controller
         ]);
     }
 
+    private function toMinorUnits(string $amount): int
+    {
+        [$major, $fraction] = array_pad(explode('.', $amount, 2), 2, '');
+        return (int) $major * 100 + (int) str_pad($fraction, 2, '0');
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $data = $this->validated($request);
@@ -63,7 +70,8 @@ class PlanController extends Controller
             $plan = Plan::create([
                 'name' => $data['name'], 'slug' => Str::lower($data['slug']),
                 'description' => $data['description'] ?? null,
-                'monthly_price_minor' => (int) round(((float) $data['monthly_price']) * 100),
+                'monthly_price_minor' => $this->toMinorUnits((string) $data['monthly_price']),
+                'yearly_price_minor' => isset($data['yearly_price']) ? $this->toMinorUnits((string) $data['yearly_price']) : null,
                 'currency' => $data['currency'],
                 'max_branches' => $data['max_branches'] ?? null,
                 'max_employees' => $data['max_employees'] ?? null,
@@ -88,7 +96,8 @@ class PlanController extends Controller
             $plan->update([
                 'name' => $data['name'], 'slug' => Str::lower($data['slug']),
                 'description' => $data['description'] ?? null,
-                'monthly_price_minor' => (int) round(((float) $data['monthly_price']) * 100),
+                'monthly_price_minor' => $this->toMinorUnits((string) $data['monthly_price']),
+                'yearly_price_minor' => isset($data['yearly_price']) ? $this->toMinorUnits((string) $data['yearly_price']) : null,
                 'currency' => $data['currency'],
                 'max_branches' => $data['max_branches'] ?? null,
                 'max_employees' => $data['max_employees'] ?? null,

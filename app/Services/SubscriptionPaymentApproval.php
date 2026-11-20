@@ -36,7 +36,7 @@ class SubscriptionPaymentApproval
                 ]);
             }
             if (SubscriptionPaymentRequest::where('review_reference', $externalReference)
-                ->whereKeyNot($payment->id)->exists()) {
+                ->where('id', '!=', $payment->id)->exists()) {
                 throw ValidationException::withMessages(['review_reference' => 'This verified transaction reference has already been used.']);
             }
             if ($payment->method === 'card' && (! $payment->provider_verified_at || ! $payment->provider_reference)) {

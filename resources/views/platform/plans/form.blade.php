@@ -20,6 +20,8 @@
             <textarea name="description" id="description" rows="3">{{ old('description', $plan?->description) }}</textarea>
             <label for="monthly_price">Monthly price</label>
             <input type="number" name="monthly_price" id="monthly_price" min="0" max="10000000" step="0.01" required value="{{ old('monthly_price', $plan ? number_format($plan->monthly_price_minor / 100, 2, '.', '') : '0.00') }}">
+            <label for="yearly_price">Yearly price (optional, blank = unavailable)</label>
+            <input type="number" name="yearly_price" id="yearly_price" min="0" max="10000000" step="0.01" value="{{ old('yearly_price', $plan?->yearly_price_minor !== null ? number_format($plan->yearly_price_minor / 100, 2, '.', '') : '') }}" placeholder="Annual subscription amount">
             <label for="currency">Currency</label>
             <select name="currency" id="currency">
                 @foreach(['LKR', 'USD'] as $currency)
