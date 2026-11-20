@@ -6,6 +6,16 @@
     <div><span class="overline">YOUR WORKSPACE</span><h1>{{ $tenant->name }}</h1><p class="muted">Your business foundation is ready. Future modules will appear as they are enabled.</p></div>
     <span class="status status-{{ $tenant->effective_status }}">{{ ucfirst($tenant->effective_status) }}</span>
 </div>
+@if($announcements->isNotEmpty())
+    <div class="announcement-list">
+        @foreach($announcements as $announcement)
+            <section class="announcement announcement-{{ $announcement->tone }}" role="status">
+                <strong>{{ $announcement->title }}</strong>
+                <p>{{ $announcement->message }}</p>
+            </section>
+        @endforeach
+    </div>
+@endif
 <div class="stat-grid">
     <div class="stat-card tint-lavender"><span class="stat-icon">▦</span><span class="stat-label">Branches</span><strong>{{ $tenant->branches_count }}</strong><small>Business locations</small></div>
     <div class="stat-card tint-mint"><span class="stat-icon">♙</span><span class="stat-label">Team members</span><strong>{{ $tenant->users_count }}</strong><small>Authorized workspace users</small></div>

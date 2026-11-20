@@ -2,9 +2,14 @@
 @section('title',$tenant->name)
 @section('header',$tenant->name)
 @section('content')
+@php
+    $role = auth()->user()->platformRole();
+    $canOperate = in_array($role, ['super_admin','operations'], true);
+    $canBill = in_array($role, ['super_admin','billing'], true);
+@endphp
 <div class="page-head">
     <div><span class="overline">BUSINESS DETAILS</span><h1>{{ $tenant->name }}</h1><p class="muted">{{ $tenant->slug }} · Created {{ $tenant->created_at->format('d M Y') }}</p></div>
-    <div class="page-actions"><span class="status status-{{ $tenant->effective_status }}">{{ ucfirst($tenant->effective_status) }}</span><a class="btn btn-outline" href="{{ route('platform.tenants.index') }}">← All businesses</a></div>
+    <div class="page-actions"><span class="status status-{{ $tenant->effective_status }}">{{ ucfirst($tenant->effective_status) }}</span>@if($canOperate)<a class="btn btn-outline" href="{{ route('platform.tenants.index') }}">← All businesses</a>@elseif($canBill)<a class="btn btn-outline" href="{{ route('platform.subscriptions.index') }}">← Subscriptions</a>@else<a class="btn btn-outline" href="{{ route('platform.support.index') }}">← Support</a>@endif</div>
 </div>
 <div class="detail-grid">
     <section class="panel">
@@ -24,7 +29,7 @@
                 <span>Trial remaining</span><strong>{{ $tenant->trial->days_remaining }} days</strong>
                 <small>{{ $tenant->trial->started_at->format('d M Y') }} — {{ $tenant->trial->ends_at->format('d M Y') }}</small>
             </div>
-            @if($tenant->status === 'trial')
+            @if($tenant->status === 'trial' && $canOperate)
                 <form method="POST" action="{{ route('platform.tenants.trial.extend', $tenant) }}" class="form-stack">@csrf
                     <label for="days">Extend trial (days)</label>
                     <input id="days" type="number" name="days" min="1" max="90" value="7" required>
@@ -51,6 +56,7 @@
             @endforeach
         </div>
     </section>
+    @if($canOperate)
     <section class="panel panel-wide">
         <div class="panel-heading"><div><h2>Account status</h2><p class="muted">Administrative override — subscription payments are not yet integrated</p></div></div>
         <form method="POST" action="{{ route('platform.tenants.status', $tenant) }}" class="inline-form">@csrf @method('PATCH')
@@ -60,10 +66,13 @@
                     <option value="{{ $value }}" @selected($tenant->status === $value)>{{ $label }}</option>
                 @endforeach
             </select>
+            <input name="reason" type="text" maxlength="1000" placeholder="Reason (required when suspending)">
             <button class="btn btn-primary" type="submit" data-confirm="Update this business account status?">Save status</button>
         </form>
     </section>
+    @endif
 </div>
+@if($canBill)
 <div class="dashboard-grid lower-grid">
     <section class="panel panel-wide">
         <div class="panel-heading"><div><h2>Plan & manual activation</h2><p class="muted">Licensing controls — assigning a plan does not collect money.</p></div></div>
@@ -109,4 +118,16 @@
         </div>
     </section>
 </div>
+@endif
+@if($canOperate)
+    @include('platform.tenants.partials.operations')
+@endif
+<section class="panel" style="margin-top:16px">
+    <div class="panel-heading"><div><h2>Recent activity</h2><p class="muted">Latest audited events for this business</p></div></div>
+    <div class="stack-list">
+        @forelse($activity as $event)
+            <div class="stack-row"><span class="circle-initial">◷</span><span class="stack-grow"><strong>{{ $event->action }}</strong><small>{{ $event->actor?->name ?? 'System' }} · {{ $event->created_at?->format('d M Y H:i') }}</small></span></div>
+        @empty <p class="muted empty-box">No recent audit events for this business.</p> @endforelse
+    </div>
+</section>
 @endsection

@@ -92,7 +92,7 @@ class AdminTeamController extends Controller
                 $otherSuperAdmins = User::where('is_platform_admin', true)
                     ->whereNull('temporary_admin_expires_at')
                     ->where(fn ($q) => $q->where('platform_role', 'super_admin')->orWhereNull('platform_role'))
-                    ->whereKeyNot($target->id)->count();
+                    ->where('id', '!=', $target->id)->count();
                 abort_if($otherSuperAdmins < 1, 422, 'At least one permanent super administrator must remain.');
             }
 

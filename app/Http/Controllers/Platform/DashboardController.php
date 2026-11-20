@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Platform;
 
 use App\Http\Controllers\Controller;
 use App\Models\Tenant;
+use App\Models\SupportTicket;
+use App\Models\AuditLog;
+use App\Models\Subscription;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
@@ -29,6 +32,10 @@ class DashboardController extends Controller
                     ->whereColumn('trials.tenant_id', 'tenants.id')->limit(1)
             )->limit(5)->get();
 
-        return view('platform.dashboard', compact('stats', 'recent', 'expiring'));
+        $stats['support'] = SupportTicket::whereNotIn('status', ['closed','resolved'])->count();
+        $stats['subscriptions'] = Subscription::where('source', 'manual')->count();
+        $recentActions = AuditLog::with('actor:id,name')->latest('id')->limit(5)->get();
+
+        return view('platform.dashboard', compact('stats', 'recent', 'expiring', 'recentActions'));
     }
 }

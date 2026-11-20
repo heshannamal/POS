@@ -76,13 +76,17 @@ class TenantController extends Controller
         $plans = Plan::where('is_active', true)->orderBy('name')->get();
         $modules = Module::orderBy('category')->orderBy('name')->get();
 
-        return view('platform.tenants.show', compact('tenant', 'plans', 'modules'));
+        $activity = AuditLog::where('tenant_id', $tenant->id)->with('actor:id,name')
+            ->latest('id')->limit(12)->get();
+
+        return view('platform.tenants.show', compact('tenant', 'plans', 'modules', 'activity'));
     }
 
     public function status(Request $request, Tenant $tenant): RedirectResponse
     {
         $data = $request->validate([
             'status' => ['required', Rule::in(['trial', 'active', 'suspended'])],
+            'reason' => ['nullable', 'string', 'max:1000', 'required_if:status,suspended'],
         ]);
 
         DB::transaction(function () use ($request, $tenant, $data): void {
@@ -113,7 +117,7 @@ class TenantController extends Controller
                 'action' => 'tenant.status.changed',
                 'subject_type' => Tenant::class,
                 'subject_id' => $tenant->id,
-                'metadata' => ['from' => $before, 'to' => $data['status']],
+                'metadata' => ['from' => $before, 'to' => $data['status'], 'reason' => $data['reason'] ?? null],
                 'ip_address' => $request->ip(),
             ]);
         });

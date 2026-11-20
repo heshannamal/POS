@@ -107,11 +107,13 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
         ->middleware('platform.admin')->group(function (): void {
             Route::get('/dashboard', [PlatformDashboard::class, 'index'])->name('dashboard');
 
+            Route::get('/businesses/{tenant:slug}', [PlatformTenants::class, 'show'])
+                ->middleware('platform.role:operations,billing,support')->name('tenants.show');
+
             Route::middleware('platform.role:operations')->group(function (): void {
                 Route::get('/businesses', [PlatformTenants::class, 'index'])->name('tenants.index');
                 Route::get('/businesses/create', [PlatformTenants::class, 'create'])->name('tenants.create');
                 Route::post('/businesses', [PlatformTenants::class, 'store'])->name('tenants.store');
-                Route::get('/businesses/{tenant:slug}', [PlatformTenants::class, 'show'])->name('tenants.show');
                 Route::put('/businesses/{tenant:slug}/profile', [BusinessOperationsController::class, 'profile'])
                     ->name('tenants.profile');
                 Route::post('/businesses/{tenant:slug}/branches', [BusinessOperationsController::class, 'storeBranch'])
