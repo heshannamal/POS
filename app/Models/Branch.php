@@ -8,12 +8,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Branch extends Model
 {
     protected $fillable = [
-        'tenant_id', 'name', 'code', 'phone', 'address', 'is_default',
+        'tenant_id', 'name', 'code', 'phone', 'address', 'is_default', 'is_active',
     ];
 
     protected function casts(): array
     {
-        return ['is_default' => 'boolean'];
+        return ['is_default' => 'boolean', 'is_active' => 'boolean'];
     }
 
     public function tenant(): BelongsTo

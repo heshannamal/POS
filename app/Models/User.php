@@ -22,8 +22,19 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_platform_admin' => 'boolean',
+            'platform_role' => 'string',
             'temporary_admin_expires_at' => 'datetime',
         ];
+    }
+
+    public function platformRole(): ?string
+    {
+        return $this->is_platform_admin ? ($this->platform_role ?? 'super_admin') : null;
+    }
+
+    public function isPermanentPlatformAdmin(): bool
+    {
+        return $this->is_platform_admin && $this->temporary_admin_expires_at === null;
     }
 
     public function isTemporaryAdminExpired(): bool

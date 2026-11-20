@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Plan extends Model
 {
-    protected $fillable = ['slug', 'name', 'description', 'currency', 'monthly_price_minor', 'is_public', 'is_active'];
+    protected $fillable = ['slug', 'name', 'description', 'currency', 'monthly_price_minor', 'is_public', 'is_active', 'max_branches', 'max_employees'];
 
     protected function casts(): array
     {
@@ -15,6 +15,7 @@ class Plan extends Model
             'is_public' => 'boolean',
             'is_active' => 'boolean',
             'monthly_price_minor' => 'integer',
+            'max_branches' => 'integer', 'max_employees' => 'integer',
         ];
     }
 
