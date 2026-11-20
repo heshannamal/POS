@@ -1,0 +1,35 @@
+name: Foundation checks
+
+on:
+  push:
+    branches:
+      - main
+      - 'feature/**'
+  pull_request:
+
+jobs:
+  app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, xml, pdo_sqlite, sqlite3, bcmath
+          coverage: none
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Setup application
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+      - name: Run feature tests
+        run: php artisan test
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build frontend assets
+        run: |
+          npm install --no-audit --no-fund
+          npm run build
