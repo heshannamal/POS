@@ -69,8 +69,10 @@
                             @foreach($plans as $plan)
                                 <tr>
                                     <td><strong>{{ $plan->name }}</strong></td>
-                                    <td>{{ $plan->currency }} {{ number_format($plan->monthly_price_minor/100,2) }}</td>
-                                    <td>{{ $plan->yearly_price_minor !== null ? $plan->currency.' '.number_format($plan->yearly_price_minor/100,2) : 'Not offered' }}</td>
+                                    <td>@if($plan->discountIsActive())<small class="table-subtext"><s>{{ $plan->currency }} {{ number_format($plan->monthly_price_minor/100,2) }}</s></small>@endif
+                                        <strong>{{ $plan->currency }} {{ number_format($plan->priceForCycleMinor('monthly')/100,2) }}</strong>
+                                        @if($plan->discountIsActive())<span class="status status-active">{{ $plan->discount_percentage }}% off</span>@endif</td>
+                                    <td>{{ $plan->yearly_price_minor !== null ? $plan->currency.' '.number_format($plan->priceForCycleMinor('yearly')/100,2) : 'Not offered' }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -82,7 +84,7 @@
                     <label for="payment_plan_id">Subscription plan</label>
                     <select name="plan_id" id="payment_plan_id" required>
                         @foreach($plans as $plan)
-                            <option value="{{ $plan->id }}" @selected(old('plan_id')==$plan->id)>{{ $plan->name }} · {{ $plan->currency }} {{ number_format($plan->monthly_price_minor/100,2) }}/month</option>
+                            <option value="{{ $plan->id }}" @selected(old('plan_id')==$plan->id)>{{ $plan->name }} · {{ $plan->currency }} {{ number_format($plan->priceForCycleMinor('monthly')/100,2) }}/month</option>
                         @endforeach
                     </select>
                     <label for="billing_cycle">Billing period</label>

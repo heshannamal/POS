@@ -40,9 +40,7 @@ class SubscriptionPaymentController extends Controller
         $plan = Plan::whereKey($data['plan_id'])->where('is_active', true)
             ->where('is_public', true)->firstOrFail();
 
-        $amount = $data['billing_cycle'] === 'yearly'
-            ? $plan->yearly_price_minor
-            : $plan->monthly_price_minor;
+        $amount = $plan->priceForCycleMinor($data['billing_cycle']);
         if ($amount === null || $amount < 1) {
             throw ValidationException::withMessages(['plan_id' => 'The selected billing cycle is not available for this paid plan.']);
         }
@@ -91,6 +89,7 @@ class SubscriptionPaymentController extends Controller
                         'method' => 'asset', 'plan_id' => $plan->id,
                         'billing_cycle' => $data['billing_cycle'],
                         'requested_amount_minor' => $amount, 'currency' => $plan->currency,
+                        'discount_percentage' => $plan->discountIsActive() ? $plan->discount_percentage : null,
                     ],
                     'ip_address' => $request->ip(),
                 ]);

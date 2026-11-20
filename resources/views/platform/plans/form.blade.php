@@ -28,6 +28,21 @@
                     <option value="{{ $currency }}" @selected(old('currency', $plan?->currency ?? 'LKR') === $currency)>{{ $currency }}</option>
                 @endforeach
             </select>
+            <div class="plan-discount-box" data-plan-discount>
+                <input type="hidden" name="is_discount_available" value="0">
+                <label class="check-line" for="is_discount_available" style="gap:12px">
+                    <input id="is_discount_available" name="is_discount_available" type="checkbox" value="1"
+                        @checked(old('is_discount_available', $plan?->is_discount_available ?? false))>
+                    <span><strong>Is discount available?</strong><small class="table-subtext">Apply a percentage discount to monthly and yearly plan prices.</small></span>
+                </label>
+                <div data-discount-percentage-wrap>
+                    <label for="discount_percentage">Discount percentage (%)</label>
+                    <input type="number" id="discount_percentage" name="discount_percentage" min="0.01" max="99.99" step="0.01"
+                        value="{{ old('discount_percentage', $plan?->discount_percentage) }}" placeholder="e.g. 10.00">
+                    <p class="muted">The discount is applied to both billing cycles; existing pending payment requests retain their submitted price.</p>
+                </div>
+                <div class="hint-box" data-discount-preview aria-live="polite">Price preview appears here.</div>
+            </div>
             <label for="max_branches">Maximum active branches (blank = unlimited)</label>
             <input type="number" id="max_branches" name="max_branches" min="1" max="100000" value="{{ old('max_branches', $plan?->max_branches) }}" placeholder="Unlimited">
             <label for="max_employees">Maximum active employees including owner (blank = unlimited)</label>

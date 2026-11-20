@@ -50,3 +50,39 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 });
+
+
+// Plan-discount control: no frontend amount is trusted by the billing server.
+document.addEventListener('DOMContentLoaded', () => {
+    const wrapper = document.querySelector('[data-plan-discount]');
+    if (!wrapper) return;
+
+    const toggle = wrapper.querySelector('#is_discount_available');
+    const percentage = wrapper.querySelector('#discount_percentage');
+    const pane = wrapper.querySelector('[data-discount-percentage-wrap]');
+    const preview = wrapper.querySelector('[data-discount-preview]');
+    const monthly = document.querySelector('#monthly_price');
+    const yearly = document.querySelector('#yearly_price');
+
+    const update = () => {
+        const enabled = toggle.checked;
+        pane.hidden = !enabled;
+        percentage.required = enabled;
+        const discount = enabled ? Number(percentage.value) : 0;
+        const valid = !enabled || (discount > 0 && discount < 100);
+        const percentText = enabled && valid ? discount.toFixed(2) + '% discount' : enabled ? 'Enter a discount from 0.01% to 99.99%' : 'No discount applied';
+        const discounted = (input) => {
+            if (!input.value.trim() || !valid) return '—';
+            const original = Math.round(Number(input.value) * 100);
+            if (!Number.isFinite(original) || original < 0) return '—';
+            const basis = Math.round(discount * 100);
+            const savings = enabled ? Math.floor((original * basis + 5000) / 10000) : 0;
+            return ((original - savings) / 100).toFixed(2);
+        };
+        preview.textContent = percentText + ' · Monthly: ' + discounted(monthly) +
+            ' · Yearly: ' + discounted(yearly);
+    };
+
+    [toggle, percentage, monthly, yearly].forEach((control) => control.addEventListener('input', update));
+    update();
+});

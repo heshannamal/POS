@@ -11,12 +11,14 @@
         <div class="panel-heading"><div><h2>Subscription plans</h2><p class="muted">Prices are stored in the smallest currency unit. Configure them before publishing.</p></div></div>
         <div class="table-scroll">
             <table class="data-table">
-                <thead><tr><th>Plan</th><th>Monthly price</th><th>Modules included</th><th>Visibility</th><th></th></tr></thead>
+                <thead><tr><th>Plan</th><th>Monthly price</th><th>Discount</th><th>Modules included</th><th>Visibility</th><th></th></tr></thead>
                 <tbody>
                     @foreach($plans as $plan)
                         <tr>
                             <td><strong>{{ $plan->name }}</strong><div class="muted">{{ $plan->slug }}</div></td>
-                            <td>{{ $plan->currency }} {{ number_format($plan->monthly_price_minor / 100, 2) }}</td>
+                            <td>@if($plan->discountIsActive())<small class="table-subtext"><s>{{ $plan->currency }} {{ number_format($plan->monthly_price_minor/100,2) }}</s></small>@endif
+                                <strong>{{ $plan->currency }} {{ number_format($plan->priceForCycleMinor('monthly')/100,2) }}</strong></td>
+                            <td>@if($plan->discountIsActive())<span class="status status-active">{{ $plan->discount_percentage }}% off</span>@else<span class="muted">None</span>@endif</td>
                             <td>{{ $plan->modules->count() }}</td>
                             <td><span class="status status-{{ $plan->is_active ? ($plan->is_public ? 'active' : 'trial') : 'suspended' }}">{{ ! $plan->is_active ? 'Inactive' : ($plan->is_public ? 'Published flag' : 'Unpublished') }}</span></td>
                             <td><a href="{{ route('platform.plans.edit', $plan) }}" class="btn btn-small btn-outline">Configure →</a></td>

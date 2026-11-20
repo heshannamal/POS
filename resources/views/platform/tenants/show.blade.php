@@ -86,7 +86,7 @@
             <label for="activation_plan">Select plan</label>
             <select name="plan_id" id="activation_plan" required>
                 @foreach($plans as $plan)
-                    <option value="{{ $plan->id }}" @selected($tenant->subscription?->plan_id == $plan->id)>{{ $plan->name }} — {{ $plan->currency }} {{ number_format($plan->monthly_price_minor / 100, 2) }} / month</option>
+                    <option value="{{ $plan->id }}" @selected($tenant->subscription?->plan_id == $plan->id)>{{ $plan->name }} — {{ $plan->currency }} {{ number_format($plan->priceForCycleMinor('monthly') / 100, 2) }} / month{{ $plan->discountIsActive() ? ' ('.$plan->discount_percentage.'% off)' : '' }}</option>
                 @endforeach
             </select>
             <div class="hint-box">Activating a plan is a manual administrative grant. No payment verification, subscription invoice or money collection takes place.</div>
