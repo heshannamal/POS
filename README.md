@@ -43,3 +43,9 @@ See [payment preferences, uploads, review and security](docs/PAYMENT-REVIEW.md).
 ## Plan discounts & trial operations
 
 See [Plan Discounts & Trial Administration](docs/PLAN-DISCOUNTS-AND-TRIALS.md) for the checkbox/percentage discount, discounted payment snapshots, creating trials for verified owners, inactivating/reactivating and extending trials.
+
+## Advanced tenant management
+
+[Business profiles, country/logo, filters, internal notes, onboarding, lifecycle controls, reversible archiving and tenant export](docs/ADVANCED-TENANT-MANAGEMENT.md).
+
+Requires incremental migrations and backup of private logos. No existing business data is deleted by these changes.
