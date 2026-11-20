@@ -64,7 +64,7 @@ class PlatformUserInvitationTest extends TestCase
         $this->post(route('platform-invite.accept', $token), [
             'password' => 'AnotherSecurePassword2026',
             'password_confirmation' => 'AnotherSecurePassword2026',
-        ])->assertNotFound();
+        ])->assertStatus(410);
     }
 
     public function test_expired_invitation_is_rejected(): void
@@ -81,7 +81,7 @@ class PlatformUserInvitationTest extends TestCase
         $this->post(route('platform-invite.accept', $token), [
             'password' => 'SecurePassword2026',
             'password_confirmation' => 'SecurePassword2026',
-        ])->assertNotFound();
+        ])->assertStatus(410);
         $this->assertDatabaseMissing('users', ['email' => 'expired@example.com']);
     }
 }
