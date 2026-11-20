@@ -9,7 +9,7 @@ class Trial extends Model
 {
     protected $fillable = [
         'tenant_id', 'started_at', 'ends_at', 'duration_days',
-        'extension_days', 'converted_at',
+        'extension_days', 'converted_at', 'is_active',
     ];
 
     protected function casts(): array
@@ -18,6 +18,7 @@ class Trial extends Model
             'started_at' => 'datetime',
             'ends_at' => 'datetime',
             'converted_at' => 'datetime',
+            'is_active' => 'boolean',
         ];
     }
 

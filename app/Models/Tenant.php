@@ -57,8 +57,13 @@ class Tenant extends Model
 
     public function getEffectiveStatusAttribute(): string
     {
-        return $this->status === 'trial' && $this->trial?->ends_at->isPast()
-            ? 'expired'
-            : $this->status;
+        if ($this->status === 'trial') {
+            if ($this->trial && ! $this->trial->is_active) {
+                return 'inactive';
+            }
+            return $this->trial?->ends_at?->isPast() ? 'expired' : 'trial';
+        }
+
+        return $this->status;
     }
 }
