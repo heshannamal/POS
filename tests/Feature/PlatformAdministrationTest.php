@@ -235,4 +235,32 @@ class PlatformAdministrationTest extends TestCase
         $this->assertSame('USD', $tenant->currency);
         $this->assertSame(21, $tenant->trial->duration_days);
     }
+
+    public function test_operations_cannot_grant_manual_subscriptions_without_billing_rights(): void
+    {
+        $tenant = $this->tenant();
+        $operations = $this->admin('operations');
+        $billing = $this->admin('billing');
+
+        $this->actingAs($operations)->patch(route('platform.tenants.status', $tenant), [
+            'status' => 'active',
+        ])->assertForbidden();
+        $this->assertSame('trial', $tenant->fresh()->status);
+
+        $plan = Plan::where('slug', 'business')->firstOrFail();
+        $this->actingAs($billing)->post(route('platform.tenants.plan.activate', $tenant), [
+            'plan_id' => $plan->id,
+        ])->assertRedirect();
+        $this->assertSame('active', $tenant->fresh()->status);
+
+        $this->actingAs($operations)->patch(route('platform.tenants.status', $tenant), [
+            'status' => 'suspended', 'reason' => 'Requested by platform compliance',
+        ])->assertRedirect();
+        $this->assertSame('suspended', $tenant->fresh()->status);
+
+        $this->actingAs($operations)->patch(route('platform.tenants.status', $tenant), [
+            'status' => 'active',
+        ])->assertRedirect();
+        $this->assertSame('active', $tenant->fresh()->status);
+    }
 }
