@@ -69,7 +69,7 @@ class TemporaryAdminTest extends TestCase
 
         $this->actingAs($user)->get(route('platform.dashboard'))->assertOk();
 
-        $user->update(['temporary_admin_expires_at' => now()->subSecond()]);
+        $user->forceFill(['temporary_admin_expires_at' => now()->subMinute()])->save();
         $this->actingAs($user->fresh())->get(route('platform.dashboard'))->assertForbidden();
     }
 }
