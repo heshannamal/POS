@@ -20,6 +20,11 @@ class PaymentSettingsController extends Controller
             'is_enabled' => ['required', 'boolean'],
             'instructions' => ['nullable', 'string', 'max:3000'],
         ]);
+        if ($method->code === 'asset' && (bool) $data['is_enabled'] && mb_strlen(trim((string) ($data['instructions'] ?? ''))) < 10) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'instructions' => 'Add payment instructions before enabling proof uploads.',
+            ]);
+        }
         DB::transaction(function () use ($method, $data, $request) {
             $before = $method->is_enabled;
             $method->update([

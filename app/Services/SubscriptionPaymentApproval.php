@@ -30,9 +30,9 @@ class SubscriptionPaymentApproval
             if ($payment->status !== 'pending') {
                 throw ValidationException::withMessages(['payment' => 'This request has already been reviewed.']);
             }
-            if ($verifiedAmountMinor < $payment->requested_amount_minor) {
+            if ($verifiedAmountMinor !== $payment->requested_amount_minor) {
                 throw ValidationException::withMessages([
-                    'approved_amount' => 'The verified amount is below the payable amount. Reject the request or resolve the difference before activation.',
+                    'approved_amount' => 'The verified amount must match the requested plan price exactly. Reject or reconcile any underpayment or overpayment separately before activation.',
                 ]);
             }
             if (SubscriptionPaymentRequest::where('review_reference', $externalReference)
