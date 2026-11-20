@@ -63,6 +63,12 @@ class TrialManagementController extends Controller
         return view('platform.trials.index', compact('tenants', 'defaultDays', 'state', 'stats'));
     }
 
+    public function create(): View
+    {
+        $defaultDays = PlatformSetting::trialDays();
+        return view('platform.trials.create', compact('defaultDays'));
+    }
+
     public function store(Request $request, CreateTenant $service): RedirectResponse
     {
         $data = $request->validate([

@@ -30,12 +30,23 @@
                 <small>{{ $tenant->trial->started_at->format('d M Y') }} — {{ $tenant->trial->ends_at->format('d M Y') }}</small>
             </div>
             @if($tenant->status === 'trial' && $canOperate)
+                <span class="status status-{{ $tenant->trial->is_active ? 'active' : 'suspended' }}">{{ $tenant->trial->is_active ? 'Trial active' : 'Trial inactive' }}</span>
                 <form method="POST" action="{{ route('platform.tenants.trial.extend', $tenant) }}" class="form-stack">@csrf
                     <label for="days">Extend trial (days)</label>
                     <input id="days" type="number" name="days" min="1" max="90" value="7" required>
                     <label for="notes">Internal reason (optional)</label>
                     <input id="notes" type="text" name="notes" maxlength="1000" placeholder="Reason for extension">
                     <button class="btn btn-secondary" type="submit">Extend trial</button>
+                </form>
+                <form method="POST" action="{{ route('platform.trials.active', $tenant) }}" class="form-stack" style="margin-top:14px">
+                    @csrf @method('PATCH')
+                    <input type="hidden" name="is_active" value="{{ $tenant->trial->is_active ? '0' : '1' }}">
+                    <label for="trial_active_reason">Reason for {{ $tenant->trial->is_active ? 'deactivation' : 'reactivation' }}</label>
+                    <input id="trial_active_reason" name="reason" type="text" minlength="5" maxlength="1000" required placeholder="Internal reason">
+                    <button class="btn btn-outline" type="submit"
+                        data-confirm="{{ $tenant->trial->is_active ? 'Deactivate trial feature access without deleting business data?' : 'Reactivate trial without changing the current expiry date?' }}">
+                        {{ $tenant->trial->is_active ? 'Deactivate trial' : 'Reactivate trial' }}
+                    </button>
                 </form>
             @endif
         @endif

@@ -148,6 +148,11 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
                 Route::post('/businesses/{tenant:slug}/trial/extend', [PlatformTenants::class, 'extendTrial'])
                     ->name('tenants.trial.extend');
                 Route::get('/trials', [TrialManagementController::class, 'index'])->name('trials.index');
+                Route::get('/trials/create', [TrialManagementController::class, 'create'])->name('trials.create');
+                Route::post('/trials', [TrialManagementController::class, 'store'])
+                    ->middleware('throttle:8,1')->name('trials.store');
+                Route::patch('/trials/{tenant:slug}/active', [TrialManagementController::class, 'setActive'])
+                    ->name('trials.active');
                 Route::put('/trials/settings', [TrialManagementController::class, 'settings'])
                     ->name('trials.settings');
             });
