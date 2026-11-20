@@ -18,6 +18,32 @@
     <div class="stat-card tint-blue"><span class="stat-icon">◷</span><span class="stat-label">Active trials</span><strong>{{ number_format($stats['trial']) }}</strong><small>Trials currently running</small></div>
     <div class="stat-card tint-peach"><span class="stat-icon">!</span><span class="stat-label">Expired trials</span><strong>{{ number_format($stats['expired']) }}</strong><small>Awaiting activation or extension</small></div>
 </div>
+<div class="stat-grid" style="margin-top:15px">
+    <div class="stat-card tint-lavender"><span class="stat-icon">♙</span><span class="stat-label">Registered users</span><strong>{{ number_format($stats['users']) }}</strong><small>All verified and pending accounts</small></div>
+    <div class="stat-card tint-blue"><span class="stat-icon">▦</span><span class="stat-label">Total stores / branches</span><strong>{{ number_format($stats['stores']) }}</strong><small>Across all businesses</small></div>
+    <div class="stat-card tint-peach"><span class="stat-icon">▤</span><span class="stat-label">Payment requests pending</span><strong>{{ number_format($stats['pending_payments']) }}</strong><small>Subscription proof verification queue</small></div>
+    <div class="stat-card tint-mint"><span class="stat-icon">✓</span><span class="stat-label">Verified today</span><strong>{{ number_format($stats['verified_today']) }}</strong><small>Subscription payments reviewed today</small></div>
+</div>
+<div class="dashboard-grid lower-grid">
+    <section class="panel panel-wide">
+        <div class="panel-heading"><div><h2>System health</h2><p class="muted">Lightweight live checks; infrastructure telemetry will be added after monitoring is configured</p></div></div>
+        <div class="detail-list">
+            @foreach($health as $name=>$value)
+                <div><dt>{{ ucfirst(str_replace('_',' ',$name)) }}</dt><dd>{{ $value }}</dd></div>
+            @endforeach
+        </div>
+    </section>
+    <section class="panel">
+        <div class="panel-heading"><div><h2>Verified subscription payments</h2><p class="muted">Recorded admin-confirmed receipts, grouped by currency; not full sales or accounting revenue</p></div></div>
+        <div class="stack-list">
+            @forelse($verifiedAmounts as $amount)
+                <div class="stack-row"><span class="circle-initial">◇</span><span class="stack-grow"><strong>{{ $amount->currency }} {{ number_format($amount->total_minor/100, 2) }}</strong><small>Manually verified subscription receipts</small></span></div>
+            @empty <p class="muted empty-box">No subscription receipts have been approved.</p> @endforelse
+        </div>
+        <p class="muted" style="margin-top:12px">Live POS orders, customer sales, session-based online user counts and server uptime are not available until those services are implemented.</p>
+        @if($canBill)<a href="{{ route('platform.payments.review.index') }}" class="btn btn-secondary">Review payment queue →</a>@endif
+    </section>
+</div>
 <div class="dashboard-grid">
     <section class="panel panel-wide">
         <div class="panel-heading"><div><h2>Recent businesses</h2><p class="muted">New workspaces created on the platform</p></div>@if($canOperate)<a class="text-link" href="{{ route('platform.tenants.index') }}">View all →</a>@endif</div>
