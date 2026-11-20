@@ -1,16 +1,23 @@
 # POS Cloud
 
-**Modular POS SaaS platform - Phase 1 Laravel foundation**
+Modular Laravel 13 multi-tenant POS SaaS platform.
 
-This repository contains a new Laravel 13 application with:
+## Implemented
 
-- Multi-tenant business data model, branches, tenant owner membership and permission scaffolding.
-- Authenticated and email-verified business registration and onboarding.
-- Secure platform administrator access and business/trial management.
-- Real trial provisioning and extension without deleting tenant data on upgrade.
-- Responsive rounded-pill SaaS design with both light and dark themes.
-- Automated foundation tests and a GitHub Actions workflow.
+**Phase 1 — Foundation**
+- Verified email registration, authentication, onboarding and secure platform administrator.
+- Tenant separation, branches, owner roles, trial provisioning and audit logs.
+- Responsive business and platform dashboards with matching light/dark themes.
 
-For setup and architecture, see [Foundation Guide](docs/FOUNDATION.md).
+**Phase 2 — Commercial & workforce administration**
+- Plan catalog and module entitlements with server-side feature checks.
+- Admin-managed manual plan activations, module overrides and trial duration.
+- Team membership, secure email invitations, employee status management, custom roles and permission matrix.
+- Tenant-scoped authorization and audit logging; automated feature and security tests.
 
-This is the initial foundation, **not** the complete POS product. Subscription payments, inventory, checkout, merchant settlements, desktop/mobile apps and e-commerce modules will follow in separate phases.
+## Setup and documentation
+
+- [Installation and foundation](docs/FOUNDATION.md)
+- [Phase 2 workflows and upgrade instructions](docs/PHASE2.md)
+
+This remains a **development-stage SaaS platform**, not yet a complete POS product. Physical POS sales, inventory operations, payment processing and merchant settlements are not live. Prices in the default plan catalog are unpublished placeholders.
