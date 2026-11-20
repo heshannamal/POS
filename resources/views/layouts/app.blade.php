@@ -39,7 +39,16 @@
         <div class="sidebar-section-label">{{ $platform ? 'PLATFORM' : 'WORKSPACE' }}</div>
         <nav class="side-nav" aria-label="Main navigation">
             @foreach ($navItems as $item)
-                @if (!$platform && isset($item['can']) && (!app(\App\Services\TenantAuthorization::class)->allows(auth()->user(), $tenant, $item['can']) || !app(\App\Services\FeatureAccess::class)->allows($tenant, $item['feature'])))
+                @php
+                    $visible = true;
+                    if (!$platform && isset($item['can'])) {
+                        $authorization = app(\App\Services\TenantAuthorization::class);
+                        $featureAccess = app(\App\Services\FeatureAccess::class);
+                        $visible = $authorization->allows(auth()->user(), $tenant, $item['can'])
+                            && $featureAccess->allows($tenant, $item['feature']);
+                    }
+                @endphp
+                @if (!$visible)
                     @continue
                 @endif
                 @if ($item['route'])
