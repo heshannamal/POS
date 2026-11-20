@@ -82,7 +82,9 @@ class TenantFoundationTest extends TestCase
         fwrite(STDERR, "[checkpoint] before platform dashboard\\n");
         $this->actingAs($admin)->get(route('platform.dashboard'))->assertOk();
         fwrite(STDERR, "[checkpoint] before tenant details\\n");
-        $this->actingAs($admin)->get(route('platform.tenants.show', $tenant))->assertOk();
+        $tenantUrl = route('platform.tenants.show', $tenant);
+        fwrite(STDERR, "[checkpoint] tenant URL built: ".$tenantUrl."\\n");
+        $this->actingAs($admin)->get($tenantUrl)->assertOk();
         fwrite(STDERR, "[checkpoint] before trial extension\\n");
 
         $this->actingAs($admin)->post(route('platform.tenants.trial.extend', $tenant), [
