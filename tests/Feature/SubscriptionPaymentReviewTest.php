@@ -249,4 +249,51 @@ class SubscriptionPaymentReviewTest extends TestCase
         $this->assertSame('trialing', $f['tenant']->fresh()->subscription->status);
         $this->assertSame('pending', $payment->fresh()->status);
     }
+
+    public function test_temporary_super_admin_cannot_authorize_real_payment_reviews(): void
+    {
+        $f = $this->fixture();
+        $this->enableEvidence($f['admin']);
+        $this->submit($f['owner'], $f['tenant'], $f['plan']);
+        $payment = SubscriptionPaymentRequest::firstOrFail();
+        $temporary = User::factory()->create([
+            'is_platform_admin' => true, 'platform_role' => 'super_admin',
+            'temporary_admin_expires_at' => now()->addHours(2),
+        ]);
+
+        $this->actingAs($temporary)->get(route('platform.payments.review.show', $payment))
+            ->assertOk();
+        $this->actingAs($temporary)->post(route('platform.payments.review.approve', $payment), [
+            'approved_amount' => '3500.00', 'review_reference' => 'TEMP-REVIEW-01',
+            'confirm_funds_checked' => '1',
+        ])->assertForbidden();
+        $this->assertSame('pending', $payment->fresh()->status);
+        $this->assertSame('trial', $f['tenant']->fresh()->status);
+    }
+
+    public function test_bank_reference_cannot_be_reused_for_another_business(): void
+    {
+        $f = $this->fixture();
+        $this->enableEvidence($f['admin']);
+        $this->submit($f['owner'], $f['tenant'], $f['plan']);
+        $first = SubscriptionPaymentRequest::firstOrFail();
+
+        $this->actingAs($f['admin'])->post(route('platform.payments.review.approve', $first), [
+            'approved_amount' => '3500.00', 'review_reference' => 'BANK-REUSED-01',
+            'confirm_funds_checked' => '1',
+        ])->assertRedirect();
+
+        $otherOwner = User::factory()->create();
+        $other = app(CreateTenant::class)->handle($otherOwner, ['name' => 'Another Paid Shop']);
+        $this->submit($otherOwner, $other, $f['plan']);
+        $second = SubscriptionPaymentRequest::where('tenant_id', $other->id)->firstOrFail();
+
+        $this->actingAs($f['admin'])->post(route('platform.payments.review.approve', $second), [
+            'approved_amount' => '3500.00', 'review_reference' => 'BANK-REUSED-01',
+            'confirm_funds_checked' => '1',
+        ])->assertSessionHasErrors('review_reference');
+
+        $this->assertSame('trial', $other->fresh()->status);
+        $this->assertSame('pending', $second->fresh()->status);
+    }
 }
