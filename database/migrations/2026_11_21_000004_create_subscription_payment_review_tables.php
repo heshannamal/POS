@@ -27,6 +27,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('tenant_id')->constrained()->restrictOnDelete();
             $table->foreignId('plan_id')->constrained()->restrictOnDelete();
+            $table->foreignId('previous_plan_id')->nullable()->constrained('plans')->restrictOnDelete();
             $table->foreignId('submitted_by')->constrained('users')->restrictOnDelete();
             $table->string('method', 20);
             $table->string('billing_cycle', 12)->default('monthly');

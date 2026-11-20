@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class SubscriptionPaymentRequest extends Model
 {
     protected $fillable = [
-        'tenant_id', 'plan_id', 'submitted_by', 'method', 'billing_cycle',
+        'tenant_id', 'plan_id', 'previous_plan_id', 'submitted_by', 'method', 'billing_cycle',
         'requested_amount_minor', 'currency', 'status', 'proof_path',
         'customer_reference', 'provider_reference', 'provider_verified_at',
         'approved_amount_minor', 'review_reference', 'reviewed_by',

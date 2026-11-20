@@ -49,22 +49,24 @@ class SubscriptionPaymentApproval
             }
             $subscription = Subscription::where('tenant_id', $tenant->id)->lockForUpdate()->firstOrFail();
 
-            // Do not let a stale payment switch a tenant away from a plan that
-            // was manually activated while this receipt was under review.
-            if ($subscription->status === 'active'
-                && $subscription->plan_id !== $payment->plan_id) {
+            // Compare to the plan at submission, not to the requested upgrade.
+            // This allows an intentional upgrade while rejecting stale receipts.
+            if ($payment->previous_plan_id !== null
+                && $subscription->plan_id !== $payment->previous_plan_id) {
                 throw ValidationException::withMessages([
-                    'payment' => 'The business changed plans since this request was submitted. Reconcile it manually before approving.',
+                    'payment' => 'The business plan changed since submission. Resolve the stale payment before approving.',
                 ]);
             }
 
             $before = $tenant->status;
-            $start = $subscription->status === 'active' && $subscription->ends_at?->isFuture()
+            $renewingSamePlan = $subscription->status === 'active'
+                && $subscription->plan_id === $payment->plan_id;
+            $periodStart = $renewingSamePlan && $subscription->ends_at?->isFuture()
                 ? $subscription->ends_at->copy()
                 : now();
             $end = $payment->billing_cycle === 'yearly'
-                ? $start->copy()->addYearNoOverflow()
-                : $start->copy()->addMonthNoOverflow();
+                ? $periodStart->copy()->addYearNoOverflow()
+                : $periodStart->copy()->addMonthNoOverflow();
 
             $payment->update([
                 'status' => 'approved',
@@ -79,7 +81,8 @@ class SubscriptionPaymentApproval
                 'plan_id' => $payment->plan_id,
                 'status' => 'active',
                 'source' => $payment->method === 'asset' ? 'asset_review' : 'card_review',
-                'started_at' => $start,
+                'started_at' => $renewingSamePlan && $subscription->started_at
+                    ? $subscription->started_at : now(),
                 'ends_at' => $end,
             ]);
 

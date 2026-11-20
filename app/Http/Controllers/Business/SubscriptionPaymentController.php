@@ -71,6 +71,7 @@ class SubscriptionPaymentController extends Controller
                 $payment = SubscriptionPaymentRequest::create([
                     'tenant_id' => $tenant->id,
                     'plan_id' => $plan->id,
+                    'previous_plan_id' => $tenant->subscription?->plan_id,
                     'submitted_by' => $request->user()->id,
                     'method' => 'asset',
                     'billing_cycle' => $data['billing_cycle'],
