@@ -18,6 +18,9 @@ use App\Http\Controllers\Platform\AnnouncementController;
 use App\Http\Controllers\Platform\SupportController as PlatformSupportController;
 use App\Http\Controllers\Platform\UsersController;
 use App\Http\Controllers\Platform\PaymentsController;
+use App\Http\Controllers\Platform\PaymentReviewController;
+use App\Http\Controllers\Platform\PaymentSettingsController;
+use App\Http\Controllers\Business\SubscriptionPaymentController as BusinessPaymentController;
 use App\Http\Controllers\PlatformUserInvitationController;
 use App\Http\Controllers\Business\SupportController as BusinessSupportController;
 use App\Http\Controllers\Platform\SubscriptionController as PlatformSubscriptionController;
@@ -86,6 +89,10 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
         ->middleware('tenant.member')->group(function (): void {
             Route::get('/dashboard', [BusinessDashboardController::class, 'index'])->name('dashboard');
             Route::get('/subscription', [BusinessSubscriptionController::class, 'index'])->name('subscription.index');
+            Route::post('/subscription/payments', [BusinessPaymentController::class, 'store'])
+                ->middleware(['tenant.permission:settings.manage', 'throttle:5,1'])->name('subscription.payments.store');
+            Route::get('/subscription/payments/{payment}/evidence', [BusinessPaymentController::class, 'receipt'])
+                ->middleware('tenant.permission:settings.manage')->name('subscription.payments.receipt');
             Route::middleware('tenant.permission:settings.manage')->group(function (): void {
                 Route::get('/support', [BusinessSupportController::class, 'index'])->name('support.index');
                 Route::post('/support', [BusinessSupportController::class, 'store'])
@@ -158,6 +165,13 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
                 Route::put('/modules/{module}', [ModuleController::class, 'update'])->name('modules.update');
                 Route::get('/subscriptions', [SubscriptionRegistryController::class, 'index'])->name('subscriptions.index');
                 Route::get('/payment-setup', [PaymentsController::class, 'index'])->name('payments.index');
+                Route::get('/payment-requests', [PaymentReviewController::class, 'index'])->name('payments.review.index');
+                Route::get('/payment-requests/{payment}', [PaymentReviewController::class, 'show'])->name('payments.review.show');
+                Route::get('/payment-requests/{payment}/evidence', [PaymentReviewController::class, 'receipt'])->name('payments.review.receipt');
+                Route::post('/payment-requests/{payment}/approve', [PaymentReviewController::class, 'approve'])
+                    ->middleware('throttle:10,1')->name('payments.review.approve');
+                Route::post('/payment-requests/{payment}/reject', [PaymentReviewController::class, 'reject'])
+                    ->middleware('throttle:10,1')->name('payments.review.reject');
                 Route::post('/businesses/{tenant:slug}/plan', [PlatformSubscriptionController::class, 'activate'])
                     ->name('tenants.plan.activate');
                 Route::put('/businesses/{tenant:slug}/modules', [PlatformSubscriptionController::class, 'grant'])
@@ -195,6 +209,8 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
                     ->middleware('throttle:5,1')->name('admins.update');
                 Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
                 Route::put('/settings', [SettingsController::class, 'update'])->name('settings.update');
+                Route::put('/payment-setup/methods/{method}', [PaymentSettingsController::class, 'update'])
+                    ->name('payments.methods.update');
             });
         });
 
