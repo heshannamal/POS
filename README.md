@@ -35,3 +35,7 @@ This is the platform admin layer. Actual POS sales/inventory, mobile/desktop
 clients, customer storefronts, online billing, merchant settlement, KYC and
 payment gateway integrations remain separate development phases. Manual
 subscription activation does not imply a payment has occurred.
+
+## Subscription payment setup
+
+See [payment preferences, uploads, review and security](docs/PAYMENT-REVIEW.md). Both payment methods start disabled. Uploaded proofs can be enabled by Super Admin and reviewed by Billing; card checkout awaits an approved provider. These are SaaS subscription fees, not retail sales or merchant settlements.
