@@ -363,4 +363,29 @@ class AdvancedTenantManagementTest extends TestCase
         $this->assertSame('pending',$request->fresh()->status);
         $this->assertSame('inactive',$tenant->fresh()->status);
     }
+
+    public function test_upgrade_backfills_recoverable_legacy_suspended_accounts(): void
+    {
+        $trialTenant = $this->tenant('Previously Suspended Trial');
+        $trialTenant->forceFill([
+            'status' => 'suspended',
+            'lifecycle_previous_status' => null,
+        ])->save();
+        $trialTenant->subscription()->update(['status' => 'paused', 'source' => 'trial']);
+
+        $paidTenant = $this->tenant('Previously Suspended Subscriber');
+        $paidTenant->forceFill([
+            'status' => 'suspended',
+            'lifecycle_previous_status' => null,
+        ])->save();
+        $paidTenant->subscription()->update(['status' => 'paused', 'source' => 'card_review']);
+
+        $migration = require database_path('migrations/2026_11_21_000008_backfill_recoverable_suspended_tenants.php');
+        $migration->up();
+
+        $this->assertSame('trial', $trialTenant->fresh()->lifecycle_previous_status);
+        $this->assertSame('active', $paidTenant->fresh()->lifecycle_previous_status);
+        $this->assertSame('suspended', $trialTenant->fresh()->status);
+        $this->assertSame('paused', $paidTenant->fresh()->subscription->status);
+    }
 }
