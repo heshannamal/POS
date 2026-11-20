@@ -16,6 +16,8 @@ use App\Http\Controllers\Platform\ReportsController;
 use App\Http\Controllers\Platform\AuditController;
 use App\Http\Controllers\Platform\AnnouncementController;
 use App\Http\Controllers\Platform\SupportController as PlatformSupportController;
+use App\Http\Controllers\Platform\UsersController;
+use App\Http\Controllers\PlatformUserInvitationController;
 use App\Http\Controllers\Business\SupportController as BusinessSupportController;
 use App\Http\Controllers\Platform\SubscriptionController as PlatformSubscriptionController;
 use App\Http\Controllers\Platform\TrialManagementController;
@@ -33,6 +35,10 @@ Route::get('/team/invite/{token}', [StaffInvitationController::class, 'show'])
     ->middleware('throttle:20,1')->name('staff.invites.show');
 
 Route::middleware('guest')->group(function (): void {
+    Route::get('/account-invitation/{token}', [PlatformUserInvitationController::class, 'show'])
+        ->middleware('throttle:20,1')->name('platform-invite.show');
+    Route::post('/account-invitation/{token}', [PlatformUserInvitationController::class, 'accept'])
+        ->middleware('throttle:6,1')->name('platform-invite.accept');
     Route::get('/login', [AuthController::class, 'loginForm'])->name('login');
     Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
     Route::get('/register', [AuthController::class, 'registerForm'])->name('register');
@@ -109,6 +115,13 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
 
             Route::get('/businesses/{tenant:slug}', [PlatformTenants::class, 'show'])
                 ->middleware('platform.role:operations,billing,support')->name('tenants.show');
+
+            Route::get('/users', [UsersController::class, 'index'])
+                ->middleware('platform.role:operations,support')->name('users.index');
+            Route::get('/users/{user}', [UsersController::class, 'show'])
+                ->middleware('platform.role:operations,support')->name('users.show');
+            Route::post('/users/invite', [UsersController::class, 'invite'])
+                ->middleware(['platform.role:operations', 'throttle:8,1'])->name('users.invite');
 
             Route::middleware('platform.role:operations')->group(function (): void {
                 Route::get('/businesses', [PlatformTenants::class, 'index'])->name('tenants.index');
