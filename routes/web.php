@@ -154,11 +154,14 @@ Route::middleware(['auth', 'verified', 'account.ready'])->group(function (): voi
 
             Route::middleware('platform.role:operations,support')->group(function (): void {
                 Route::get('/stores', [GlobalStoreController::class, 'index'])->name('stores.index');
+                Route::get('/stores/create', [GlobalStoreController::class, 'create'])
+                    ->middleware('platform.role:operations')->name('stores.create');
                 Route::get('/stores/{store}', [GlobalStoreController::class, 'show'])->name('stores.show');
                 Route::get('/tenant-users', [GlobalTenantUserController::class, 'index'])->name('tenant-users.index');
                 Route::get('/tenant-users/{tenant:slug}/{user}', [GlobalTenantUserController::class, 'show'])->name('tenant-users.show');
             });
             Route::middleware('platform.role:operations')->group(function (): void {
+                Route::post('/stores', [GlobalStoreController::class, 'store'])->name('stores.store');
                 Route::patch('/stores/{store}', [GlobalStoreController::class, 'update'])->name('stores.update');
                 Route::put('/stores/{store}/settings', [GlobalStoreController::class, 'settings'])->name('stores.settings');
                 Route::post('/stores/{store}/staff', [GlobalStoreController::class, 'assign'])->name('stores.staff.assign');

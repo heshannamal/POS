@@ -5,7 +5,7 @@
 <div class="page-head">
     <div><span class="overline">MULTI-TENANT OPERATIONS</span><h1>Global stores directory</h1><p class="muted">View every active business's locations, managers, device inventory and assigned staff.</p></div>
     @if(in_array(auth()->user()->platformRole(),['super_admin','operations'],true))
-        <a class="btn btn-primary" href="{{ route('platform.tenants.create') }}">＋ New business / store</a>
+        <a class="btn btn-primary" href="{{ route('platform.stores.create') }}">＋ Add store</a>
     @endif
 </div>
 <div class="stat-grid">

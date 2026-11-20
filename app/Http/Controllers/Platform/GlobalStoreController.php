@@ -62,6 +62,70 @@ class GlobalStoreController extends Controller
         return view('platform.stores.index', compact('stores', 'tenants', 'countries', 'stats'));
     }
 
+    public function create(): View
+    {
+        $tenants = Tenant::with('subscription.plan')
+            ->whereIn('status', ['trial', 'active'])
+            ->orderBy('name')->get(['id', 'name', 'slug', 'status']);
+
+        return view('platform.stores.create', compact('tenants'));
+    }
+
+    public function store(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'tenant_id' => ['required', 'integer', 'exists:tenants,id'],
+            'name' => ['required', 'string', 'max:120'],
+            'code' => ['required', 'string', 'max:30', 'regex:/^[a-zA-Z0-9_-]+$/'],
+            'phone' => ['nullable', 'string', 'max:30'],
+            'address' => ['nullable', 'string', 'max:1000'],
+            'timezone' => ['nullable', Rule::in(timezone_identifiers_list())],
+        ]);
+
+        $store = DB::transaction(function () use ($request, $data): Branch {
+            $tenant = Tenant::whereKey($data['tenant_id'])->lockForUpdate()->firstOrFail();
+            if (! in_array($tenant->effective_status, ['active', 'trial'], true)) {
+                throw ValidationException::withMessages([
+                    'tenant_id' => 'The selected business is restricted or its trial is expired.',
+                ]);
+            }
+            $maxBranches = $tenant->subscription?->plan?->max_branches;
+            if ($maxBranches !== null && $tenant->branches()->where('is_active', true)->count() >= $maxBranches) {
+                throw ValidationException::withMessages([
+                    'tenant_id' => 'The current plan maximum active store count has been reached.',
+                ]);
+            }
+
+            $code = strtoupper($data['code']);
+            if ($tenant->branches()->where('code', $code)->exists()) {
+                throw ValidationException::withMessages([
+                    'code' => 'This store code is already registered within the selected business.',
+                ]);
+            }
+
+            $branch = Branch::create([
+                'tenant_id' => $tenant->id, 'name' => $data['name'],
+                'code' => $code, 'phone' => $data['phone'] ?? null,
+                'address' => $data['address'] ?? null,
+                'timezone' => $data['timezone'] ?? null, 'status' => 'active',
+                'is_active' => true, 'is_default' => false,
+            ]);
+
+            AuditLog::create([
+                'tenant_id' => $tenant->id, 'actor_id' => $request->user()->id,
+                'action' => 'store.created', 'subject_type' => Branch::class,
+                'subject_id' => $branch->id,
+                'metadata' => ['code' => $code],
+                'ip_address' => $request->ip(),
+            ]);
+
+            return $branch;
+        });
+
+        return redirect()->route('platform.stores.show', $store)
+            ->with('status', 'Store created within the selected business.');
+    }
+
     public function show(Branch $store): View
     {
         $this->activeTenant($store);

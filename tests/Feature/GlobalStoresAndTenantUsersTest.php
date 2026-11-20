@@ -386,4 +386,44 @@ class GlobalStoresAndTenantUsersTest extends TestCase
             $rendered
         );
     }
+
+    public function test_platform_can_create_store_in_existing_tenant_with_plan_limit_and_unique_code(): void
+    {
+        $admin = $this->admin();
+        $tenant = $this->tenant('Branchable Business');
+
+        $this->actingAs($admin)->get(route('platform.stores.create'))->assertOk();
+
+        $this->actingAs($admin)->post(route('platform.stores.store'), [
+            'tenant_id' => $tenant->id, 'name' => 'Central Shop',
+            'code' => 'central', 'timezone' => 'Asia/Colombo',
+            'phone' => '0112345678', 'address' => 'City Street',
+        ])->assertRedirect();
+
+        $branch = $tenant->branches()->where('code', 'CENTRAL')->firstOrFail();
+        $this->assertSame('active', $branch->status);
+        $this->assertFalse($branch->is_default);
+        $this->assertSame('Asia/Colombo', $branch->timezone);
+        $this->assertDatabaseHas('audit_logs', [
+            'tenant_id' => $tenant->id, 'action' => 'store.created',
+            'subject_id' => $branch->id,
+        ]);
+
+        $this->actingAs($admin)->post(route('platform.stores.store'), [
+            'tenant_id' => $tenant->id, 'name' => 'Duplicate Code',
+            'code' => 'CENTRAL',
+        ])->assertSessionHasErrors('code');
+
+        $tenant->subscription->plan->update(['max_branches' => 2]);
+        $this->actingAs($admin)->post(route('platform.stores.store'), [
+            'tenant_id' => $tenant->id, 'name' => 'Beyond Plan',
+            'code' => 'THIRD',
+        ])->assertSessionHasErrors('tenant_id');
+
+        $tenant->update(['status' => 'suspended']);
+        $this->actingAs($admin)->post(route('platform.stores.store'), [
+            'tenant_id' => $tenant->id, 'name' => 'Restricted Branch',
+            'code' => 'FOURTH',
+        ])->assertSessionHasErrors('tenant_id');
+    }
 }
