@@ -49,6 +49,8 @@ class PlanController extends Controller
             'currency' => ['required', Rule::in(['LKR', 'USD'])],
             'is_active' => ['required', 'boolean'],
             'is_public' => ['required', 'boolean'],
+            'max_branches' => ['nullable', 'integer', 'min:1', 'max:100000'],
+            'max_employees' => ['nullable', 'integer', 'min:1', 'max:100000'],
             'modules' => ['nullable', 'array'],
             'modules.*' => ['integer', 'distinct', 'exists:modules,id'],
         ]);
@@ -63,6 +65,8 @@ class PlanController extends Controller
                 'description' => $data['description'] ?? null,
                 'monthly_price_minor' => (int) round(((float) $data['monthly_price']) * 100),
                 'currency' => $data['currency'],
+                'max_branches' => $data['max_branches'] ?? null,
+                'max_employees' => $data['max_employees'] ?? null,
                 'is_active' => $data['is_active'], 'is_public' => $data['is_public'],
             ]);
             $plan->modules()->sync($data['modules'] ?? []);
@@ -86,6 +90,8 @@ class PlanController extends Controller
                 'description' => $data['description'] ?? null,
                 'monthly_price_minor' => (int) round(((float) $data['monthly_price']) * 100),
                 'currency' => $data['currency'],
+                'max_branches' => $data['max_branches'] ?? null,
+                'max_employees' => $data['max_employees'] ?? null,
                 'is_active' => $data['is_active'], 'is_public' => $data['is_public'],
             ]);
             $plan->modules()->sync($data['modules'] ?? []);

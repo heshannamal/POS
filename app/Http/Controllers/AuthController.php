@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\PlatformSetting;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,6 +20,7 @@ class AuthController extends Controller
 
     public function registerForm(): View
     {
+        abort_unless(PlatformSetting::registrationEnabled(), 403, 'Public registration is currently closed.');
         return view('auth.register');
     }
 
@@ -51,6 +53,7 @@ class AuthController extends Controller
 
     public function register(Request $request): RedirectResponse
     {
+        abort_unless(PlatformSetting::registrationEnabled(), 403, 'Public registration is currently closed.');
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'email' => ['required', 'email', 'max:191', 'unique:users,email'],

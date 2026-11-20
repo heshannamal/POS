@@ -49,6 +49,14 @@ class EmployeeController extends Controller
             abort(403);
         }
 
+        $subscription = $tenant->subscription?->plan;
+        if ($subscription?->max_employees !== null) {
+            $activeMembers = $tenant->users()->wherePivot('status', 'active')->count();
+            $pendingInvites = StaffInvitation::where('tenant_id', $tenant->id)->whereNull('accepted_at')
+                ->where('expires_at', '>', now())->distinct('email')->count('email');
+            abort_if($activeMembers + $pendingInvites >= $subscription->max_employees, 422, 'Employee limit reached for the current plan.');
+        }
+
         $token = Str::random(64);
         DB::transaction(function () use ($tenant, $data, $email, $token, $request) {
             StaffInvitation::where('tenant_id', $tenant->id)

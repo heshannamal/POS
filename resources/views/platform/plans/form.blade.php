@@ -26,6 +26,10 @@
                     <option value="{{ $currency }}" @selected(old('currency', $plan?->currency ?? 'LKR') === $currency)>{{ $currency }}</option>
                 @endforeach
             </select>
+            <label for="max_branches">Maximum active branches (blank = unlimited)</label>
+            <input type="number" id="max_branches" name="max_branches" min="1" max="100000" value="{{ old('max_branches', $plan?->max_branches) }}" placeholder="Unlimited">
+            <label for="max_employees">Maximum active employees including owner (blank = unlimited)</label>
+            <input type="number" id="max_employees" name="max_employees" min="1" max="100000" value="{{ old('max_employees', $plan?->max_employees) }}" placeholder="Unlimited">
             <label for="is_active">Plan availability</label>
             <select id="is_active" name="is_active"><option value="1" @selected(old('is_active', $plan?->is_active ?? true) == 1)>Active</option><option value="0" @selected(old('is_active', $plan?->is_active ?? true) == 0)>Inactive</option></select>
             <label for="is_public">Catalog visibility flag</label>

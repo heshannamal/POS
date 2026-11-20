@@ -40,6 +40,7 @@ Artisan::command('platform:make-admin {email} {--name=Platform Administrator}', 
     $user->password = Hash::make($password);
     $user->email_verified_at ??= now();
     $user->is_platform_admin = true;
+    $user->platform_role = 'super_admin';
     $user->save();
 
     $this->info('Platform administrator is ready: '.$email);
@@ -74,6 +75,7 @@ Artisan::command('platform:temporary-login {--hours=24}', function (): int {
     ]);
     $user->forceFill([
         'is_platform_admin' => true,
+        'platform_role' => 'super_admin',
         'email_verified_at' => now(),
         'temporary_admin_expires_at' => now()->addHours($hours),
     ])->save();
