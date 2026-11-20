@@ -9,6 +9,8 @@ use App\Models\Tenant;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rule;
 
 class BusinessOperationsController extends Controller
@@ -19,13 +21,21 @@ class BusinessOperationsController extends Controller
             'name' => ['required', 'string', 'max:150'],
             'contact_email' => ['nullable', 'email', 'max:191'],
             'phone' => ['nullable', 'string', 'max:30'],
+            'contact_person' => ['sometimes', 'nullable', 'string', 'max:150'],
+            'country' => ['sometimes', 'nullable', 'string', 'regex:/^[a-zA-Z]{2}$/'],
+            'website' => ['sometimes', 'nullable', 'url:http,https', 'max:255'],
+            'registration_number' => ['sometimes', 'nullable', 'string', 'max:100'],
             'address' => ['nullable', 'string', 'max:1000'],
             'currency' => ['required', Rule::in(['LKR', 'USD'])],
             'timezone' => ['required', Rule::in(timezone_identifiers_list())],
         ]);
 
+        if (array_key_exists('country', $data) && $data['country']) {
+            $data['country'] = strtoupper($data['country']);
+        }
+
         DB::transaction(function () use ($tenant, $data, $request): void {
-            $before = $tenant->only(['name', 'contact_email', 'phone', 'address', 'currency', 'timezone']);
+            $before = $tenant->only(array_keys($data));
             $tenant->update($data);
             AuditLog::create([
                 'tenant_id' => $tenant->id, 'actor_id' => $request->user()->id,
@@ -125,5 +135,65 @@ class BusinessOperationsController extends Controller
         });
 
         return back()->with('status', 'Default branch updated.');
+    }
+    public function uploadLogo(Request $request, Tenant $tenant): RedirectResponse
+    {
+        $request->validate([
+            'logo' => ['required', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
+        ]);
+
+        $path = $request->file('logo')->store('tenant-logos/'.$tenant->id, 'local');
+        if (! $path) {
+            throw ValidationException::withMessages(['logo' => 'The logo upload failed.']);
+        }
+
+        try {
+            $oldPath = DB::transaction(function () use ($request, $tenant, $path): ?string {
+                $locked = Tenant::whereKey($tenant->id)->lockForUpdate()->firstOrFail();
+                $oldPath = $locked->logo_path;
+                $locked->update(['logo_path' => $path]);
+                AuditLog::create([
+                    'tenant_id' => $locked->id, 'actor_id' => $request->user()->id,
+                    'action' => 'tenant.logo.updated',
+                    'subject_type' => Tenant::class, 'subject_id' => $locked->id,
+                    'metadata' => ['replaced' => $oldPath !== null],
+                    'ip_address' => $request->ip(),
+                ]);
+                return $oldPath;
+            });
+        } catch (\Throwable $e) {
+            Storage::disk('local')->delete($path);
+            throw $e;
+        }
+
+        if ($oldPath && $oldPath !== $path) {
+            Storage::disk('local')->delete($oldPath);
+        }
+
+        return back()->with('status', 'Business logo uploaded.');
+    }
+
+    public function deleteLogo(Request $request, Tenant $tenant): RedirectResponse
+    {
+        $old = DB::transaction(function () use ($request, $tenant): ?string {
+            $locked = Tenant::whereKey($tenant->id)->lockForUpdate()->firstOrFail();
+            $old = $locked->logo_path;
+            if (! $old) {
+                return null;
+            }
+            $locked->update(['logo_path' => null]);
+            AuditLog::create([
+                'tenant_id' => $locked->id, 'actor_id' => $request->user()->id,
+                'action' => 'tenant.logo.deleted',
+                'subject_type' => Tenant::class, 'subject_id' => $locked->id,
+                'ip_address' => $request->ip(),
+            ]);
+            return $old;
+        });
+
+        if ($old) {
+            Storage::disk('local')->delete($old);
+        }
+        return back()->with('status', 'Business logo removed.');
     }
 }
