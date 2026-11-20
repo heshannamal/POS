@@ -175,6 +175,11 @@ class TenantController extends Controller
         $target = $data['status'];
         $reason = trim((string) ($data['reason'] ?? ''));
 
+        // Operations must never activate a trial as a paid subscription.
+        if ($target === 'active' && $current === 'trial' && $request->user()->platformRole() !== 'super_admin') {
+            abort(403, 'Only a Super Admin or Billing workflow can activate a trial subscription.');
+        }
+
         if ($target === 'suspended' || $target === 'inactive') {
             if (mb_strlen($reason) < 5) {
                 throw ValidationException::withMessages(['reason' => 'Give a reason of at least five characters.']);
