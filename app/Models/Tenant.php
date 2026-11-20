@@ -13,7 +13,7 @@ class Tenant extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'name', 'slug', 'contact_email', 'phone', 'currency', 'timezone',
+        'name', 'slug', 'contact_email', 'contact_person', 'phone', 'currency', 'timezone',
         'address', 'country', 'website', 'registration_number', 'logo_path',
         'status', 'lifecycle_previous_status', 'created_by', 'onboarding_completed_at',
         'onboarding_status',
@@ -33,6 +33,11 @@ class Tenant extends Model
     {
         return $this->belongsToMany(User::class, 'tenant_user')
             ->withPivot(['is_owner', 'status'])->withTimestamps();
+    }
+
+    public function supportTickets(): HasMany
+    {
+        return $this->hasMany(SupportTicket::class);
     }
 
     public function notes(): HasMany
