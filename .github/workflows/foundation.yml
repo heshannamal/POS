@@ -33,3 +33,48 @@ jobs:
         run: |
           npm install --no-audit --no-fund
           npm run build
+
+  mysql-migrations:
+    name: MySQL 8.4 migrations
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: rootpass
+          MYSQL_DATABASE: pos_cloud_ci
+          MYSQL_USER: posci
+          MYSQL_PASSWORD: testpass
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -prootpass"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: pos_cloud_ci
+      DB_USERNAME: posci
+      DB_PASSWORD: testpass
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up PHP with MySQL
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, xml, pdo_mysql, bcmath
+          coverage: none
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Configure application
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+      - name: Run all migrations on MySQL
+        run: |
+          php artisan optimize:clear
+          php artisan migrate --force
+          php artisan migrate:status
