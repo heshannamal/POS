@@ -39,7 +39,7 @@ class AnnouncementController extends Controller
             'tone' => ['required', Rule::in(['info', 'success', 'warning'])],
             'is_published' => ['required', 'boolean'],
             'starts_at' => ['nullable', 'date'],
-            'ends_at' => ['nullable', 'date', 'after:starts_at'],
+            'ends_at' => ['nullable', 'date', $request->filled('starts_at') ? 'after:starts_at' : 'after:now'],
         ]);
     }
 

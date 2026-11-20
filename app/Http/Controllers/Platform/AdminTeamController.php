@@ -83,6 +83,8 @@ class AdminTeamController extends Controller
         $this->password($request);
 
         DB::transaction(function () use ($request, $administrator, $data): void {
+            // Serialize concurrent administrative role changes to protect the last permanent super-admin.
+            User::where('is_platform_admin', true)->orderBy('id')->lockForUpdate()->get(['id']);
             $target = User::whereKey($administrator->id)->lockForUpdate()->firstOrFail();
             abort_unless($target->is_platform_admin, 404);
             abort_if($target->id === $request->user()->id, 403, 'You cannot modify your own administrator access.');
