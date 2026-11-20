@@ -21,3 +21,16 @@ Modular Laravel 13 multi-tenant POS SaaS platform.
 - [Phase 2 workflows and upgrade instructions](docs/PHASE2.md)
 
 This remains a **development-stage SaaS platform**, not yet a complete POS product. Physical POS sales, inventory operations, payment processing and merchant settlements are not live. Prices in the default plan catalog are unpublished placeholders.
+
+
+## Temporary login for local development
+
+After pulling and migrating the current main branch, run:
+
+    php artisan platform:temporary-login --hours=24
+
+The command creates a random, email-verified platform administrator and prints its
+unique email and password once. Open /login and use those credentials.
+The account automatically loses access after 24 hours (configurable from 1 to 72 hours).
+The command is disabled when APP_ENV is production. Never commit or share the
+generated password. Regular admins can be created with platform:make-admin.

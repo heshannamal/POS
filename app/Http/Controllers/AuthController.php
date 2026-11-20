@@ -34,6 +34,16 @@ class AuthController extends Controller
                 ->onlyInput('email');
         }
 
+        if ($request->user()->isTemporaryAdminExpired()) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return back()->withErrors([
+                'email' => 'This temporary login has expired. Generate a new one from your local terminal.',
+            ])->onlyInput('email');
+        }
+
         $request->session()->regenerate();
 
         return redirect()->intended($this->homeFor($request->user()));

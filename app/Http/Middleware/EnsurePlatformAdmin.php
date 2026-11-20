@@ -10,7 +10,7 @@ class EnsurePlatformAdmin
 {
     public function handle(Request $request, Closure $next): Response
     {
-        abort_unless($request->user()?->is_platform_admin, 403);
+        abort_unless($request->user()?->is_platform_admin && ! $request->user()->isTemporaryAdminExpired(), 403);
 
         return $next($request);
     }

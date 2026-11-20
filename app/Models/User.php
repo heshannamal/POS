@@ -22,7 +22,14 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_platform_admin' => 'boolean',
+            'temporary_admin_expires_at' => 'datetime',
         ];
+    }
+
+    public function isTemporaryAdminExpired(): bool
+    {
+        return $this->temporary_admin_expires_at !== null
+            && $this->temporary_admin_expires_at->isPast();
     }
 
     public function tenants(): BelongsToMany
