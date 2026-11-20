@@ -169,9 +169,9 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
                 Route::get('/payment-requests/{payment}', [PaymentReviewController::class, 'show'])->name('payments.review.show');
                 Route::get('/payment-requests/{payment}/evidence', [PaymentReviewController::class, 'receipt'])->name('payments.review.receipt');
                 Route::post('/payment-requests/{payment}/approve', [PaymentReviewController::class, 'approve'])
-                    ->middleware('throttle:10,1')->name('payments.review.approve');
+                    ->middleware(['platform.billing_review', 'throttle:10,1'])->name('payments.review.approve');
                 Route::post('/payment-requests/{payment}/reject', [PaymentReviewController::class, 'reject'])
-                    ->middleware('throttle:10,1')->name('payments.review.reject');
+                    ->middleware(['platform.billing_review', 'throttle:10,1'])->name('payments.review.reject');
                 Route::post('/businesses/{tenant:slug}/plan', [PlatformSubscriptionController::class, 'activate'])
                     ->name('tenants.plan.activate');
                 Route::put('/businesses/{tenant:slug}/modules', [PlatformSubscriptionController::class, 'grant'])
