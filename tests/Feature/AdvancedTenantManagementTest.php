@@ -317,4 +317,50 @@ class AdvancedTenantManagementTest extends TestCase
             'tenant_id'=>$tenant->id,'action'=>'tenant.export.downloaded',
         ]);
     }
+
+    public function test_inactive_business_cannot_be_activated_through_billing_or_payment_review(): void
+    {
+        $admin = $this->admin('operations');
+        $billing = $this->admin('billing');
+        $owner = User::factory()->create();
+        $tenant = app(CreateTenant::class)->handle($owner,['name'=>'Access Restricted']);
+        $plan = Plan::where('slug','business')->firstOrFail();
+
+        $this->actingAs($admin)->patch(route('platform.tenants.lifecycle.update',$tenant),[
+            'action'=>'deactivate','reason'=>'Account paused for compliance review.',
+        ])->assertRedirect();
+
+        $this->assertSame('inactive',$tenant->fresh()->status);
+
+        $this->actingAs($billing)->post(route('platform.tenants.plan.activate',$tenant),[
+            'plan_id'=>$plan->id,
+        ])->assertSessionHasErrors('plan_id');
+        $this->assertSame('inactive',$tenant->fresh()->status);
+        $this->assertSame('paused',$tenant->fresh()->subscription->status);
+
+        \App\Models\PaymentMethod::where('code','asset')->update(['is_enabled'=>true]);
+        $plan->update(['is_active'=>true,'is_public'=>true,'monthly_price_minor'=>150000]);
+        Storage::fake('local');
+
+        $this->actingAs($owner)->post(route('business.subscription.payments.store',$tenant),[
+            'plan_id'=>$plan->id,
+            'billing_cycle'=>'monthly',
+            'evidence'=>UploadedFile::fake()->image('receipt.png'),
+        ])->assertSessionHasErrors('evidence');
+        $this->assertDatabaseCount('subscription_payment_requests',0);
+
+        $request = \App\Models\SubscriptionPaymentRequest::create([
+            'tenant_id'=>$tenant->id, 'plan_id'=>$plan->id,
+            'submitted_by'=>$owner->id,'method'=>'asset','billing_cycle'=>'monthly',
+            'requested_amount_minor'=>150000,'currency'=>'LKR','status'=>'pending',
+        ]);
+        $this->actingAs($billing)->post(route('platform.payments.review.approve',$request),[
+            'approved_amount'=>'1500.00',
+            'review_reference'=>'BANK-BLOCKED-0001',
+            'confirm_funds_checked'=>'1',
+        ])->assertSessionHasErrors('payment');
+
+        $this->assertSame('pending',$request->fresh()->status);
+        $this->assertSame('inactive',$tenant->fresh()->status);
+    }
 }
