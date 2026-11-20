@@ -39,3 +39,7 @@ subscription activation does not imply a payment has occurred.
 ## Subscription payment setup
 
 See [payment preferences, uploads, review and security](docs/PAYMENT-REVIEW.md). Both payment methods start disabled. Uploaded proofs can be enabled by Super Admin and reviewed by Billing; card checkout awaits an approved provider. These are SaaS subscription fees, not retail sales or merchant settlements.
+
+## Plan discounts & trial operations
+
+See [Plan Discounts & Trial Administration](docs/PLAN-DISCOUNTS-AND-TRIALS.md) for the checkbox/percentage discount, discounted payment snapshots, creating trials for verified owners, inactivating/reactivating and extending trials.
