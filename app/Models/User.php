@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Notifications\PosPasswordResetNotification;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -24,6 +26,8 @@ class User extends Authenticatable implements MustVerifyEmail
             'is_platform_admin' => 'boolean',
             'platform_role' => 'string',
             'temporary_admin_expires_at' => 'datetime',
+            'last_login_at' => 'datetime',
+            'force_password_reset_at' => 'datetime',
         ];
     }
 
@@ -41,6 +45,21 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->temporary_admin_expires_at !== null
             && $this->temporary_admin_expires_at->isPast();
+    }
+
+    public function branches(): BelongsToMany
+    {
+        return $this->belongsToMany(Branch::class, 'branch_user')->withPivot(['tenant_id', 'assigned_by'])->withTimestamps();
+    }
+
+    public function loginEvents(): HasMany
+    {
+        return $this->hasMany(LoginEvent::class);
+    }
+
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new PosPasswordResetNotification($token));
     }
 
     public function tenants(): BelongsToMany

@@ -35,6 +35,11 @@ class Tenant extends Model
             ->withPivot(['is_owner', 'status'])->withTimestamps();
     }
 
+    public function storeDevices(): HasMany
+    {
+        return $this->hasMany(StoreDevice::class);
+    }
+
     public function supportTickets(): HasMany
     {
         return $this->hasMany(SupportTicket::class);
