@@ -62,9 +62,11 @@
         <form method="POST" action="{{ route('platform.tenants.status', $tenant) }}" class="inline-form">@csrf @method('PATCH')
             <label for="status">Business status</label>
             <select id="status" name="status">
-                @foreach(['trial' => 'Trial', 'active' => 'Active (manual)', 'suspended' => 'Suspended'] as $value => $label)
-                    <option value="{{ $value }}" @selected($tenant->status === $value)>{{ $label }}</option>
-                @endforeach
+                <option value="trial" @selected($tenant->status === 'trial') @disabled($role === 'operations' && $tenant->trial?->converted_at)>Trial</option>
+                @if($role === 'super_admin' || ($tenant->status === 'suspended' && $tenant->subscription?->source === 'manual') || $tenant->status === 'active')
+                    <option value="active" @selected($tenant->status === 'active')>Active (manual)</option>
+                @endif
+                <option value="suspended" @selected($tenant->status === 'suspended')>Suspended</option>
             </select>
             <input name="reason" type="text" maxlength="1000" placeholder="Reason (required when suspending)">
             <button class="btn btn-primary" type="submit" data-confirm="Update this business account status?">Save status</button>

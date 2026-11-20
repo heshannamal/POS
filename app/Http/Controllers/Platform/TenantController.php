@@ -89,6 +89,19 @@ class TenantController extends Controller
             'reason' => ['nullable', 'string', 'max:1000', 'required_if:status,suspended'],
         ]);
 
+        // Operations can suspend businesses and restore an already-manual
+        // subscription, but cannot convert a free trial to a paid-license state.
+        if ($request->user()->platformRole() === 'operations') {
+            if ($data['status'] === 'active') {
+                $restoring = $tenant->status === 'suspended'
+                    && $tenant->subscription?->source === 'manual';
+                abort_unless($restoring, 403, 'Only billing administrators can activate a trial subscription.');
+            }
+            if ($data['status'] === 'trial' && $tenant->trial?->converted_at) {
+                abort(403, 'A converted business cannot be returned to trial by operations staff.');
+            }
+        }
+
         DB::transaction(function () use ($request, $tenant, $data): void {
             $before = $tenant->status;
             $tenant->update(['status' => $data['status']]);
