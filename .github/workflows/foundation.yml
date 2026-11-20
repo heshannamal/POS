@@ -24,6 +24,8 @@ jobs:
         run: |
           cp .env.example .env
           php artisan key:generate
+      - name: Lint PHP application files
+        run: find app routes database/migrations -name '*.php' -print0 | xargs -0 -n1 php -l > /dev/null
       - name: Compile Blade templates
         run: php artisan view:cache
       - name: Run feature tests

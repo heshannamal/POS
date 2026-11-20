@@ -135,7 +135,7 @@ class CommercialAndEmployeesTest extends TestCase
 
         $this->actingAs($owner)->put(route('business.roles.update', [$otherTenant, $role]), [
             'name' => 'Wrong Tenant',
-        ])->assertNotFound();
+        ])->assertForbidden();
     }
 
     public function test_staff_invites_require_matching_verified_identity_and_cannot_be_reused(): void

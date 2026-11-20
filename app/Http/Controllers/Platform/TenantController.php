@@ -6,8 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\Module;
 use App\Models\Plan;
-use App\Models\Plan;
-use App\Models\Subscription;
 use App\Models\Tenant;
 use App\Models\Trial;
 use App\Models\TrialEvent;
@@ -74,12 +72,9 @@ class TenantController extends Controller
 
     public function show(Tenant $tenant): View
     {
-        file_put_contents('php://stderr', "[checkpoint] start tenant show\\n");
         $tenant->load(['trial', 'users', 'branches', 'subscription.plan.modules', 'moduleGrants.module']);
-        file_put_contents('php://stderr', "[checkpoint] tenant relations loaded\\n");
         $plans = Plan::where('is_active', true)->orderBy('name')->get();
         $modules = Module::orderBy('category')->orderBy('name')->get();
-        file_put_contents('php://stderr', "[checkpoint] plan and module lists loaded\\n");
 
         return view('platform.tenants.show', compact('tenant', 'plans', 'modules'));
     }
