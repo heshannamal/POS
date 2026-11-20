@@ -18,7 +18,7 @@ class OnboardingController extends Controller
     {
         $input = $request->validate([
             'name' => ['required', 'string', 'max:150'],
-            'contact_email' => ['nullable', 'email', 'max:255'],
+            'contact_email' => ['nullable', 'email', 'max:191'],
             'phone' => ['nullable', 'string', 'max:30'],
             'address' => ['nullable', 'string', 'max:1000'],
         ]);
