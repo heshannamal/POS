@@ -101,6 +101,13 @@
             <div class="topbar-title"><span class="eyebrow">{{ $platform ? 'Platform administration' : 'Business overview' }}</span>
                 <strong>@yield('header', 'Dashboard')</strong></div>
             <div class="topbar-actions">
+                @if($platform && in_array(auth()->user()->platformRole(), ['super_admin','billing'], true))
+                    @php $pendingPaymentReviews = \App\Models\SubscriptionPaymentRequest::where('status','pending')->count(); @endphp
+                    <a href="{{ route('platform.payments.review.index') }}" class="topbar-review-link" aria-label="{{ $pendingPaymentReviews }} pending subscription payment reviews" title="Payment reviews">
+                        <span aria-hidden="true">◷</span>
+                        @if($pendingPaymentReviews > 0)<span class="pending-review-count">{{ $pendingPaymentReviews > 99 ? '99+' : $pendingPaymentReviews }}</span>@endif
+                    </a>
+                @endif
                 <span class="topbar-user">{{ auth()->user()->name }}</span>
                 <button type="button" class="icon-button js-theme-toggle" aria-label="Toggle dark mode"><span class="theme-symbol">☾</span></button>
                 <span class="avatar">{{ mb_strtoupper(mb_substr(auth()->user()->name, 0, 1)) }}</span>
