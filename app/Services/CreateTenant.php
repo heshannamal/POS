@@ -39,11 +39,15 @@ class CreateTenant
                 'contact_email' => $input['contact_email'] ?? $owner->email,
                 'phone' => $input['phone'] ?? null,
                 'address' => $input['address'] ?? null,
+                'country' => $input['country'] ?? null,
+                'website' => $input['website'] ?? null,
+                'registration_number' => $input['registration_number'] ?? null,
                 'currency' => PlatformSetting::defaultCurrency(),
                 'timezone' => PlatformSetting::defaultTimezone(),
                 'status' => 'trial',
                 'created_by' => ($actor ?? $owner)->id,
                 'onboarding_completed_at' => now(),
+                'onboarding_status' => 'completed',
             ]);
 
             $tenant->users()->attach($owner->id, ['is_owner' => true, 'status' => 'active']);
