@@ -39,7 +39,7 @@ class EmployeeController extends Controller
         $data = $request->validate([
             'email' => ['required', 'email', 'max:191'],
             'role_id' => ['required', 'integer', Rule::exists('roles', 'id')
-                ->where('tenant_id', $tenant->id)->where('slug', '!=', 'owner')],
+                ->where(fn ($query) => $query->where('tenant_id', $tenant->id)->where('slug', '!=', 'owner'))],
         ]);
         $email = mb_strtolower(trim($data['email']));
         if ($tenant->users()->where('email', $email)->exists()) {
@@ -87,7 +87,7 @@ class EmployeeController extends Controller
         $data = $request->validate([
             'status' => ['required', Rule::in(['active', 'suspended'])],
             'role_id' => ['required', 'integer', Rule::exists('roles', 'id')
-                ->where('tenant_id', $tenant->id)->where('slug', '!=', 'owner')],
+                ->where(fn ($query) => $query->where('tenant_id', $tenant->id)->where('slug', '!=', 'owner'))],
         ]);
 
         DB::transaction(function () use ($tenant, $employee, $data, $request) {

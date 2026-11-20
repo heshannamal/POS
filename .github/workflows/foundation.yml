@@ -24,6 +24,8 @@ jobs:
         run: |
           cp .env.example .env
           php artisan key:generate
+      - name: Compile Blade templates
+        run: php artisan view:cache
       - name: Run feature tests
         run: vendor/bin/phpunit --no-progress --display-errors --display-warnings
       - uses: actions/setup-node@v4
