@@ -33,8 +33,8 @@ class SubscriptionPaymentController extends Controller
                 'evidence' => 'Payment evidence uploads are currently disabled by the platform.',
             ]);
         }
-        if ($tenant->status === 'suspended') {
-            throw ValidationException::withMessages(['evidence' => 'This business is currently suspended.']);
+        if (in_array($tenant->status, ['suspended', 'inactive'], true)) {
+            throw ValidationException::withMessages(['evidence' => 'This business is currently inactive or suspended.']);
         }
 
         $plan = Plan::whereKey($data['plan_id'])->where('is_active', true)

@@ -27,6 +27,9 @@ class SubscriptionController extends Controller
 
         DB::transaction(function () use ($tenant, $plan, $request) {
             $tenant = Tenant::whereKey($tenant->id)->lockForUpdate()->firstOrFail();
+            if (! in_array($tenant->status, ['trial', 'active'], true)) {
+                throw ValidationException::withMessages(['plan_id' => 'Restore business access before changing its active plan.']);
+            }
             $before = $tenant->status;
             $subscription = Subscription::where('tenant_id', $tenant->id)->lockForUpdate()->firstOrFail();
             $subscription->update([
@@ -60,7 +63,7 @@ class SubscriptionController extends Controller
             'enabled' => ['required', 'boolean'],
             'expires_at' => ['nullable', 'date', 'after:now'],
         ]);
-        if ($tenant->status === 'suspended') {
+        if (in_array($tenant->status, ['suspended', 'inactive'], true)) {
             throw ValidationException::withMessages(['module_id' => 'Resume this business before granting access.']);
         }
 

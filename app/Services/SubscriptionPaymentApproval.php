@@ -44,8 +44,8 @@ class SubscriptionPaymentApproval
             }
 
             $tenant = Tenant::whereKey($payment->tenant_id)->lockForUpdate()->firstOrFail();
-            if ($tenant->status === 'suspended') {
-                throw ValidationException::withMessages(['payment' => 'This business is suspended. Resolve the suspension before activating a subscription.']);
+            if (in_array($tenant->status, ['suspended', 'inactive'], true)) {
+                throw ValidationException::withMessages(['payment' => 'This business is inactive or suspended. Restore access before activating a subscription.']);
             }
             $subscription = Subscription::where('tenant_id', $tenant->id)->lockForUpdate()->firstOrFail();
 
