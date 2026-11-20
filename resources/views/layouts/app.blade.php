@@ -16,6 +16,8 @@
     $navItems = $platform ? [
         ['label' => 'Overview', 'icon' => '◫', 'route' => 'platform.dashboard', 'active' => 'platform.dashboard'],
         ['label' => 'Businesses', 'icon' => '▦', 'route' => 'platform.tenants.index', 'active' => 'platform.tenants.*', 'access' => ['operations']],
+        ['label' => 'All Stores', 'icon' => '▣', 'route' => 'platform.stores.index', 'active' => 'platform.stores.*', 'access' => ['operations','support']],
+        ['label' => 'Tenant Staff', 'icon' => '♙', 'route' => 'platform.tenant-users.index', 'active' => 'platform.tenant-users.*', 'access' => ['operations','support']],
         ['label' => 'Customers & Users', 'icon' => '♧', 'route' => 'platform.users.index', 'active' => 'platform.users.*', 'access' => ['operations','support']],
         ['label' => 'Trials', 'icon' => '◷', 'route' => 'platform.trials.index', 'active' => 'platform.trials.*', 'access' => ['operations']],
         ['label' => 'Subscriptions', 'icon' => '▤', 'route' => 'platform.subscriptions.index', 'active' => 'platform.subscriptions.*', 'access' => ['billing']],

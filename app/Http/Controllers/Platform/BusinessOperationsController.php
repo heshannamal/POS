@@ -106,7 +106,7 @@ class BusinessOperationsController extends Controller
                     && $tenant->branches()->where('is_active', true)->count() >= $limit,
                     422, 'The branch limit for this plan has been reached.');
             }
-            $branch->update($data);
+            $branch->update([...$data, 'status' => $data['is_active'] ? 'active' : 'closed']);
             AuditLog::create([
                 'tenant_id' => $tenant->id, 'actor_id' => $request->user()->id,
                 'action' => 'tenant.branch.updated', 'subject_type' => Branch::class,
