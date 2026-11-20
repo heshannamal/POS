@@ -25,7 +25,7 @@
     <section class="panel">
         <div class="panel-heading"><div><h2>Trial & subscription</h2><p class="muted">Account status</p></div></div>
         <div class="trial-highlight"><span>Current status</span><strong>{{ ucfirst($tenant->effective_status) }}</strong><small>{{ $tenant->trial?->ends_at?->format('d M Y') ?? 'No trial date' }}</small></div>
-        <p class="muted">Subscription purchases and additional paid modules will become available in the next development phase.</p>
+        <p class="muted">See which modules are enabled for your business. Automated subscription checkout is not yet available.</p><a href="{{ route('business.subscription.index', $tenant) }}" class="btn btn-secondary">View subscription →</a>
     </section>
 </div>
 @endsection

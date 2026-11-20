@@ -64,4 +64,49 @@
         </form>
     </section>
 </div>
+<div class="dashboard-grid lower-grid">
+    <section class="panel panel-wide">
+        <div class="panel-heading"><div><h2>Plan & manual activation</h2><p class="muted">Licensing controls — assigning a plan does not collect money.</p></div></div>
+        <div class="trial-highlight">
+            <span>Current assignment</span><strong>{{ $tenant->subscription?->plan?->name ?? 'None' }}</strong>
+            <small>Status: {{ $tenant->subscription?->status ?? 'unassigned' }} · Source: {{ $tenant->subscription?->source ?? '—' }}</small>
+        </div>
+        <form method="POST" action="{{ route('platform.tenants.plan.activate', $tenant) }}" class="form-stack">@csrf
+            <label for="activation_plan">Select plan</label>
+            <select name="plan_id" id="activation_plan" required>
+                @foreach($plans as $plan)
+                    <option value="{{ $plan->id }}" @selected($tenant->subscription?->plan_id == $plan->id)>{{ $plan->name }} — {{ $plan->currency }} {{ number_format($plan->monthly_price_minor / 100, 2) }} / month</option>
+                @endforeach
+            </select>
+            <div class="hint-box">Activating a plan is a manual administrative grant. No payment verification, subscription invoice or money collection takes place.</div>
+            <button class="btn btn-primary" type="submit" data-confirm="Activate this plan manually without collecting payment?">Activate plan manually</button>
+        </form>
+    </section>
+    <section class="panel">
+        <div class="panel-heading"><div><h2>Feature overrides</h2><p class="muted">Only released modules can be enabled.</p></div></div>
+        <form method="POST" action="{{ route('platform.tenants.modules.grant', $tenant) }}" class="form-stack">@csrf @method('PUT')
+            <label for="module_id">Released module</label>
+            <select name="module_id" id="module_id" required>
+                @forelse($modules->where('is_available', true) as $module)
+                    <option value="{{ $module->id }}">{{ $module->name }}</option>
+                @empty <option value="">No released modules</option> @endforelse
+            </select>
+            <label for="enabled">Override action</label>
+            <select name="enabled" id="enabled"><option value="1">Enable</option><option value="0">Disable</option></select>
+            <label for="expires_at">Expires at (optional)</label>
+            <input type="datetime-local" name="expires_at" id="expires_at">
+            <button class="btn btn-secondary" type="submit">Save module override</button>
+        </form>
+        <div class="stack-list">
+            @foreach($tenant->moduleGrants as $grant)
+                <div class="stack-row">
+                    <span class="stack-grow"><strong>{{ $grant->module?->name }}</strong><small>{{ $grant->enabled ? 'Enabled' : 'Disabled' }} · {{ $grant->expires_at?->format('d M Y') ?? 'No expiry' }}</small></span>
+                    <form method="POST" action="{{ route('platform.tenants.modules.revoke', [$tenant, $grant->module]) }}">@csrf @method('DELETE')
+                        <button class="btn btn-small btn-outline" type="submit">Remove</button>
+                    </form>
+                </div>
+            @endforeach
+        </div>
+    </section>
+</div>
 @endsection

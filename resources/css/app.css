@@ -262,3 +262,26 @@ label { font-weight: 800; font-size: 12px; }
     .filter-row input, .filter-row select, .filter-row .btn { width: 100%; flex: auto; }
     .page-head h1 { font-size: 24px; }
 }
+
+
+/* Phase 2: module, staff and trial management */
+.tab-row { display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px; }
+.tab-pill { padding:10px 15px;display:inline-flex;border-radius:30px;background:var(--panel-muted);color:var(--text);font-weight:800;font-size:12px; }
+.tab-pill.is-active,.tab-pill:hover { background:var(--active-pill);color:var(--text); }
+.module-checkboxes { display:grid;gap:9px; }
+.module-choice { display:flex;align-items:center;gap:12px;padding:13px;border:1px solid var(--border);border-radius:15px;background:var(--panel-muted);cursor:pointer; }
+.module-choice input { accent-color:var(--primary);width:17px;height:17px;flex-shrink:0; }
+.module-choice span:nth-child(2) { flex:1;min-width:0; }
+.module-choice strong,.module-choice small { display:block; }
+.module-choice small { color:var(--subtext);margin-top:4px;overflow-wrap:anywhere; }
+.subtle-note { margin:16px 0 0;font-size:12px; }
+.permission-list { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:20px 0; }
+.permission-group { background:var(--panel-muted);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px; }
+.permission-group > strong { margin-bottom:4px;font-size:13px; }
+.permission-group label { font-weight:500;font-size:12px;color:var(--text);line-height:1.4; }
+.permission-group input[type="checkbox"] { accent-color:var(--primary); }
+.compact-form { display:flex;align-items:center;gap:7px; }
+.compact-form select { width:auto;min-width:120px;padding:7px 10px;border-radius:10px;font-size:12px; }
+.table-subtext { display:block;color:var(--subtext);margin-top:4px; }
+@media (max-width:800px) { .permission-list{grid-template-columns:1fr;} }
+@media (max-width:620px) { .compact-form{min-width:390px;} }

@@ -43,12 +43,12 @@
 </div>
 <div class="dashboard-grid lower-grid">
     <section class="panel"><div class="panel-heading"><div><h2>Foundation modules</h2><p class="muted">Current implementation</p></div></div>
-        <div class="module-list"><span>✓ Tenant isolation and branches</span><span>✓ Authentication and verified email</span><span>✓ Trial account provisioning</span><span>✓ Owner roles and permission schema</span></div>
+        <div class="module-list"><span>✓ Tenant isolation and branches</span><span>✓ Verified registration and onboarding</span><span>✓ Plan and module licensing</span><span>✓ Employee invitations and permission roles</span><span>✓ Configurable trial defaults</span></div>
     </section>
     <section class="panel panel-wide"><div class="panel-heading"><div><h2>Getting started</h2><p class="muted">First platform setup tasks</p></div></div>
         <div class="quick-actions">
             <a href="{{ route('platform.tenants.create') }}" class="quick-action"><span>▦</span><strong>Add a business</strong><small>Provision an owner and trial</small></a>
-            <a href="{{ route('platform.tenants.index', ['status' => 'trial']) }}" class="quick-action"><span>◷</span><strong>Manage trials</strong><small>Review, extend and activate</small></a>
+            <a href="{{ route('platform.trials.index') }}" class="quick-action"><span>◷</span><strong>Manage trials</strong><small>Review, extend and activate</small></a>
             <a href="{{ route('onboarding.create') }}" class="quick-action"><span>＋</span><strong>Create your workspace</strong><small>Try business onboarding</small></a>
         </div>
     </section>
