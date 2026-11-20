@@ -51,7 +51,7 @@ Artisan::command('platform:make-admin {email} {--name=Platform Administrator}', 
  * Run: php artisan platform:temporary-login --hours=24
  */
 Artisan::command('platform:temporary-login {--hours=24}', function (): int {
-    if (! app()->environment(['local', 'testing'])) {
+    if (! in_array((string) config('app.env'), ['local', 'testing'], true)) {
         $this->error('Temporary admin creation is disabled outside local development.');
         return 1;
     }
