@@ -49,7 +49,7 @@ class PlanController extends Controller
             'yearly_price' => ['nullable', 'numeric', 'min:0', 'max:10000000', 'decimal:0,2'],
             'currency' => ['required', Rule::in(['LKR', 'USD'])],
             'is_discount_available' => ['sometimes', 'boolean'],
-            'discount_percentage' => ['nullable', 'required_if:is_discount_available,1', 'numeric', 'min:0.01', 'max:99.99', 'decimal:0,2'],
+            'discount_percentage' => [Rule::excludeIf(! $request->boolean('is_discount_available')), 'required', 'numeric', 'min:0.01', 'max:99.99', 'decimal:0,2'],
             'is_active' => ['required', 'boolean'],
             'is_public' => ['required', 'boolean'],
             'max_branches' => ['nullable', 'integer', 'min:1', 'max:100000'],
