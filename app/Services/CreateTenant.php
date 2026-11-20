@@ -5,6 +5,9 @@ namespace App\Services;
 use App\Models\AuditLog;
 use App\Models\Branch;
 use App\Models\Permission;
+use App\Models\Plan;
+use App\Models\PlatformSetting;
+use App\Models\Subscription;
 use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\Trial;
@@ -53,12 +56,18 @@ class CreateTenant
                 'is_default' => true,
             ]);
 
-            $days = (int) config('saas.default_trial_days', 14);
+            $days = PlatformSetting::trialDays();
             $trial = Trial::create([
                 'tenant_id' => $tenant->id,
                 'started_at' => now(),
                 'ends_at' => now()->addDays($days),
                 'duration_days' => $days,
+            ]);
+
+            Subscription::create([
+                'tenant_id' => $tenant->id,
+                'plan_id' => Plan::where('slug', 'starter')->value('id'),
+                'status' => 'trialing', 'source' => 'trial', 'started_at' => now(),
             ]);
 
             TrialEvent::create([
@@ -74,17 +83,13 @@ class CreateTenant
                 'slug' => 'owner',
                 'is_system' => true,
             ]);
-            Role::create([
+            $managerRole = Role::create([
                 'tenant_id' => $tenant->id,
-                'name' => 'Manager',
-                'slug' => 'manager',
-                'is_system' => true,
+                'name' => 'Manager', 'slug' => 'manager', 'is_system' => true,
             ]);
-            Role::create([
+            $cashierRole = Role::create([
                 'tenant_id' => $tenant->id,
-                'name' => 'Cashier',
-                'slug' => 'cashier',
-                'is_system' => true,
+                'name' => 'Cashier', 'slug' => 'cashier', 'is_system' => true,
             ]);
 
             foreach ([
@@ -94,9 +99,17 @@ class CreateTenant
                 ['key' => 'employees.manage', 'label' => 'Manage employees', 'group' => 'Employees'],
                 ['key' => 'reports.view', 'label' => 'View reports', 'group' => 'Reports'],
                 ['key' => 'settings.manage', 'label' => 'Manage business settings', 'group' => 'Settings'],
+                ['key' => 'employees.view', 'label' => 'View team members', 'group' => 'Employees'],
+                ['key' => 'roles.manage', 'label' => 'Manage roles and permissions', 'group' => 'Employees'],
             ] as $permission) {
                 $p = Permission::firstOrCreate(['key' => $permission['key']], $permission);
                 $ownerRole->permissions()->syncWithoutDetaching([$p->id]);
+                if (in_array($p->key, ['pos.sales', 'inventory.view', 'inventory.manage', 'employees.view', 'reports.view'], true)) {
+                    $managerRole->permissions()->syncWithoutDetaching([$p->id]);
+                }
+                if (in_array($p->key, ['pos.sales', 'inventory.view'], true)) {
+                    $cashierRole->permissions()->syncWithoutDetaching([$p->id]);
+                }
             }
 
             DB::table('role_user')->insert([

@@ -40,6 +40,16 @@ class Tenant extends Model
         return $this->hasOne(Trial::class);
     }
 
+    public function subscription(): HasOne
+    {
+        return $this->hasOne(Subscription::class);
+    }
+
+    public function moduleGrants(): HasMany
+    {
+        return $this->hasMany(TenantModuleGrant::class);
+    }
+
     public function getEffectiveStatusAttribute(): string
     {
         return $this->status === 'trial' && $this->trial?->ends_at->isPast()

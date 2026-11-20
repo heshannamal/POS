@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Platform;
 
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
+use App\Models\Plan;
+use App\Models\Subscription;
 use App\Models\Tenant;
 use App\Models\Trial;
 use App\Models\TrialEvent;
@@ -86,12 +88,21 @@ class TenantController extends Controller
             $tenant->update(['status' => $data['status']]);
 
             if ($before === 'trial' && $data['status'] === 'active') {
+                $tenant->subscription()->update(['status' => 'active', 'source' => 'manual', 'started_at' => now(), 'ends_at' => null]);
                 $tenant->trial()->update(['converted_at' => now()]);
                 TrialEvent::create([
                     'trial_id' => $tenant->trial()->value('id'),
                     'actor_id' => $request->user()->id,
                     'action' => 'manually_activated',
                 ]);
+            }
+
+            if ($data['status'] === 'suspended') {
+                $tenant->subscription()->update(['status' => 'paused']);
+            } elseif ($data['status'] === 'trial') {
+                $tenant->subscription()->update(['status' => 'trialing', 'source' => 'trial']);
+            } elseif ($data['status'] === 'active') {
+                $tenant->subscription()->update(['status' => 'active', 'source' => 'manual']);
             }
 
             AuditLog::create([
