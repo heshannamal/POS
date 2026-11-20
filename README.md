@@ -1,36 +1,37 @@
 # POS Cloud
 
-Modular Laravel 13 multi-tenant POS SaaS platform.
+Laravel 13 multi-tenant SaaS for an advanced POS and commerce platform.
 
-## Implemented
+## Admin foundation implemented
 
-**Phase 1 — Foundation**
-- Verified email registration, authentication, onboarding and secure platform administrator.
-- Tenant separation, branches, owner roles, trial provisioning and audit logs.
-- Responsive business and platform dashboards with matching light/dark themes.
+- Secure authentication, verified registration, temp local admin and user invitations
+- Tenant management, branches, employee/permission scaffolding, trials
+- Plans, modules, manually assigned subscription entitlements
+- Scoped platform admins: Super, Operations, Billing, Support, Auditor
+- Customer directory, single-use verified account invitations
+- Branch/profile operations, company status control and audit trail
+- Subscription registry, operational analytics and CSV audit export
+- Tenant support tickets, internal notes, response management, announcements
+- Registration/trial/platform defaults in Settings
+- Responsive light/dark SaaS console
 
-**Phase 2 — Commercial & workforce administration**
-- Plan catalog and module entitlements with server-side feature checks.
-- Admin-managed manual plan activations, module overrides and trial duration.
-- Team membership, secure email invitations, employee status management, custom roles and permission matrix.
-- Tenant-scoped authorization and audit logging; automated feature and security tests.
+All changes use PHP validation, authorization, Laravel CSRF protections and
+audited server operations. GitHub Actions checks PHP, Blade, PHPUnit,
+frontend assets, and MySQL 8.4 migrations.
 
-## Setup and documentation
+## Documentation
 
-- [Installation and foundation](docs/FOUNDATION.md)
-- [Phase 2 workflows and upgrade instructions](docs/PHASE2.md)
+- [Installation](docs/FOUNDATION.md)
+- [Subscription and staff foundation](docs/PHASE2.md)
+- [Platform admin operations](docs/PLATFORM-ADMIN.md)
 
-This remains a **development-stage SaaS platform**, not yet a complete POS product. Physical POS sales, inventory operations, payment processing and merchant settlements are not live. Prices in the default plan catalog are unpublished placeholders.
+To update your existing local project, pull main and run php artisan migrate.
+Do NOT use migrate:fresh unless you intend to delete all existing data.
+Vite 8 needs a current Node.js release, e.g. Node 24 LTS.
 
+### Not yet live
 
-## Temporary login for local development
-
-After pulling and migrating the current main branch, run:
-
-    php artisan platform:temporary-login --hours=24
-
-The command creates a random, email-verified platform administrator and prints its
-unique email and password once. Open /login and use those credentials.
-The account automatically loses access after 24 hours (configurable from 1 to 72 hours).
-The command is disabled when APP_ENV is production. Never commit or share the
-generated password. Regular admins can be created with platform:make-admin.
+This is the platform admin layer. Actual POS sales/inventory, mobile/desktop
+clients, customer storefronts, online billing, merchant settlement, KYC and
+payment gateway integrations remain separate development phases. Manual
+subscription activation does not imply a payment has occurred.
