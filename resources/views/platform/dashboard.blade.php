@@ -61,4 +61,12 @@
         </div>
     </section>
 </div>
+<section class="panel" style="margin-top:16px">
+    <div class="panel-heading"><div><h2>Latest platform activity</h2><p class="muted">The most recent audited operations</p></div></div>
+    <div class="stack-list">
+        @forelse($recentActions as $event)
+            <div class="stack-row"><span class="circle-initial">◷</span><span class="stack-grow"><strong>{{ $event->action }}</strong><small>{{ $event->actor?->name ?? 'System' }} · {{ $event->created_at?->format('d M Y H:i') }}</small></span></div>
+        @empty <p class="muted empty-box">No activity has been recorded yet.</p>@endforelse
+    </div>
+</section>
 @endsection

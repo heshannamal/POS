@@ -17,6 +17,7 @@ use App\Http\Controllers\Platform\AuditController;
 use App\Http\Controllers\Platform\AnnouncementController;
 use App\Http\Controllers\Platform\SupportController as PlatformSupportController;
 use App\Http\Controllers\Platform\UsersController;
+use App\Http\Controllers\Platform\PaymentsController;
 use App\Http\Controllers\PlatformUserInvitationController;
 use App\Http\Controllers\Business\SupportController as BusinessSupportController;
 use App\Http\Controllers\Platform\SubscriptionController as PlatformSubscriptionController;
@@ -156,6 +157,7 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
                 Route::get('/modules/{module}/edit', [ModuleController::class, 'edit'])->name('modules.edit');
                 Route::put('/modules/{module}', [ModuleController::class, 'update'])->name('modules.update');
                 Route::get('/subscriptions', [SubscriptionRegistryController::class, 'index'])->name('subscriptions.index');
+                Route::get('/payment-setup', [PaymentsController::class, 'index'])->name('payments.index');
                 Route::post('/businesses/{tenant:slug}/plan', [PlatformSubscriptionController::class, 'activate'])
                     ->name('tenants.plan.activate');
                 Route::put('/businesses/{tenant:slug}/modules', [PlatformSubscriptionController::class, 'grant'])
