@@ -49,3 +49,7 @@ See [Plan Discounts & Trial Administration](docs/PLAN-DISCOUNTS-AND-TRIALS.md) f
 [Business profiles, country/logo, filters, internal notes, onboarding, lifecycle controls, reversible archiving and tenant export](docs/ADVANCED-TENANT-MANAGEMENT.md).
 
 Requires incremental migrations and backup of private logos. No existing business data is deleted by these changes.
+
+## Global Stores & Tenant Staff
+
+See [Global Stores, tenant staff, device registry, login audit, session revocation, and Gmail SMTP setup](docs/GLOBAL-STORES-AND-USERS.md). Add private credentials only in your local `.env` file; the repository defaults to logged emails until configured.

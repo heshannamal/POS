@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Platform;
 
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
+use App\Services\PosEmailVariables;
 use App\Models\PlatformUserInvitation;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -78,13 +79,17 @@ class UsersController extends Controller
         });
 
         $url = route('platform-invite.show', $token);
+        $vars = [
+            'platform_name' => config('app.name', 'POS Cloud'),
+            'user_name' => $data['name'],
+            'user_email' => $email,
+            'invitation_url' => $url,
+            'expires_days' => '7',
+        ];
         try {
-            Mail::raw(
-                "You are invited to POS Cloud as a new user.\n\nSet up your account: {$url}\n\nThe link expires in seven days. It is intended only for {$email}.",
-                function ($message) use ($email) {
-                    $message->to($email)->subject('Your POS Cloud account invitation');
-                }
-            );
+            Mail::raw(PosEmailVariables::render('account_invitation', 'body', $vars), function ($message) use ($email, $vars) {
+                $message->to($email)->subject(PosEmailVariables::render('account_invitation', 'subject', $vars));
+            });
         } catch (\Throwable $e) {
             report($e);
             return back()->withErrors([
