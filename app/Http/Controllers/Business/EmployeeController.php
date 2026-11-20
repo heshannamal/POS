@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Business;
 
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
+use App\Services\PosEmailVariables;
+use App\Models\Branch;
 use App\Models\Role;
 use App\Models\StaffInvitation;
 use App\Models\Tenant;
@@ -75,10 +77,19 @@ class EmployeeController extends Controller
         });
 
         $url = route('staff.invites.show', $token);
+        $vars = [
+            'platform_name' => config('app.name', 'POS Cloud'),
+            'business_name' => $tenant->name,
+            'role_name' => Role::findOrFail($data['role_id'])->name,
+            'employee_email' => $email,
+            'invitation_url' => $url,
+            'expires_days' => '7',
+        ];
         try {
-            Mail::raw("You have been invited to join {$tenant->name} on POS Cloud.\n\nAccept your invitation: {$url}\n\nThis link expires in 7 days. Sign in or create an account using {$email}.", function ($message) use ($email, $tenant) {
-                $message->to($email)->subject("Invitation to {$tenant->name} — POS Cloud");
+            Mail::raw(PosEmailVariables::render('staff_invitation', 'body', $vars), function ($message) use ($email, $vars) {
+                $message->to($email)->subject(PosEmailVariables::render('staff_invitation', 'subject', $vars));
             });
+
         } catch (\Throwable $e) {
             report($e);
             return back()->withErrors(['email' => 'The invitation was created, but the email could not be sent. Check mail settings and retry.']);
@@ -100,6 +111,9 @@ class EmployeeController extends Controller
 
         DB::transaction(function () use ($tenant, $employee, $data, $request) {
             $tenant->users()->updateExistingPivot($employee->id, ['status' => $data['status']]);
+            if ($data['status'] !== 'active' || Role::find($data['role_id'])?->slug !== 'manager') {
+                Branch::where('tenant_id', $tenant->id)->where('manager_user_id', $employee->id)->update(['manager_user_id' => null]);
+            }
             DB::table('role_user')->where('tenant_id', $tenant->id)->where('user_id', $employee->id)->delete();
             DB::table('role_user')->insert([
                 'role_id' => $data['role_id'], 'tenant_id' => $tenant->id, 'user_id' => $employee->id,

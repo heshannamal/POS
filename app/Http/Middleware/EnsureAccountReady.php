@@ -11,7 +11,16 @@ class EnsureAccountReady
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if ($request->user()?->force_password_reset_at !== null) {
+        $user = $request->user();
+        if ($user && (int) $request->session()->get('account_session_version', 0)
+            !== (int) $user->auth_session_version) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            return redirect()->route('login')->with('status', 'This session was revoked. Sign in again.');
+        }
+
+        if ($user?->force_password_reset_at !== null) {
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();

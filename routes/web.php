@@ -23,6 +23,9 @@ use App\Http\Controllers\Platform\AuditController;
 use App\Http\Controllers\Platform\AnnouncementController;
 use App\Http\Controllers\Platform\SupportController as PlatformSupportController;
 use App\Http\Controllers\Platform\UsersController;
+use App\Http\Controllers\Platform\GlobalStoreController;
+use App\Http\Controllers\Platform\StoreDeviceController;
+use App\Http\Controllers\Platform\GlobalTenantUserController;
 use App\Http\Controllers\Platform\PaymentsController;
 use App\Http\Controllers\Platform\PaymentReviewController;
 use App\Http\Controllers\Platform\PaymentSettingsController;
@@ -61,7 +64,7 @@ Route::middleware('guest')->group(function (): void {
         ->middleware('throttle:5,1')->name('password.update');
 });
 
-Route::middleware('auth')->group(function (): void {
+Route::middleware(['auth', 'account.ready'])->group(function (): void {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     Route::view('/email/verify', 'auth.verify-email')
@@ -84,7 +87,7 @@ Route::middleware('auth')->group(function (): void {
     })->middleware('throttle:6,1')->name('verification.send');
 });
 
-Route::middleware(['auth', 'verified'])->group(function (): void {
+Route::middleware(['auth', 'verified', 'account.ready'])->group(function (): void {
     Route::post('/team/invite/{token}/accept', [StaffInvitationController::class, 'accept'])
         ->middleware('throttle:10,1')->name('staff.invites.accept');
     Route::get('/onboarding', [OnboardingController::class, 'create'])->name('onboarding.create');
@@ -149,7 +152,20 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
             Route::post('/users/invite', [UsersController::class, 'invite'])
                 ->middleware(['platform.role:operations', 'throttle:8,1'])->name('users.invite');
 
+            Route::middleware('platform.role:operations,support')->group(function (): void {
+                Route::get('/stores', [GlobalStoreController::class, 'index'])->name('stores.index');
+                Route::get('/stores/{store}', [GlobalStoreController::class, 'show'])->name('stores.show');
+                Route::get('/tenant-users', [GlobalTenantUserController::class, 'index'])->name('tenant-users.index');
+                Route::get('/tenant-users/{tenant:slug}/{user}', [GlobalTenantUserController::class, 'show'])->name('tenant-users.show');
+            });
             Route::middleware('platform.role:operations')->group(function (): void {
+                Route::patch('/stores/{store}', [GlobalStoreController::class, 'update'])->name('stores.update');
+                Route::put('/stores/{store}/settings', [GlobalStoreController::class, 'settings'])->name('stores.settings');
+                Route::post('/stores/{store}/staff', [GlobalStoreController::class, 'assign'])->name('stores.staff.assign');
+                Route::delete('/stores/{store}/staff/{user}', [GlobalStoreController::class, 'unassign'])->name('stores.staff.unassign');
+                Route::post('/stores/{store}/devices', [StoreDeviceController::class, 'store'])->name('stores.devices.store');
+                Route::patch('/stores/{store}/devices/{device}', [StoreDeviceController::class, 'update'])->name('stores.devices.update');
+                Route::patch('/tenant-users/{tenant:slug}/{user}', [GlobalTenantUserController::class, 'update'])->name('tenant-users.update');
                 Route::get('/businesses', [PlatformTenants::class, 'index'])->name('tenants.index');
                 Route::get('/businesses/create', [PlatformTenants::class, 'create'])->name('tenants.create');
                 Route::post('/businesses', [PlatformTenants::class, 'store'])->name('tenants.store');
@@ -237,6 +253,10 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
             });
 
             Route::middleware('platform.permanent')->group(function (): void {
+                Route::post('/tenant-users/{tenant:slug}/{user}/reset-password', [GlobalTenantUserController::class, 'forceReset'])
+                    ->middleware('throttle:5,1')->name('tenant-users.force-reset');
+                Route::post('/tenant-users/{tenant:slug}/{user}/revoke-sessions', [GlobalTenantUserController::class, 'revokeSessions'])
+                    ->middleware('throttle:5,1')->name('tenant-users.revoke-sessions');
                 Route::get('/administrators', [AdminTeamController::class, 'index'])->name('admins.index');
                 Route::post('/administrators', [AdminTeamController::class, 'store'])
                     ->middleware('throttle:5,1')->name('admins.store');

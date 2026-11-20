@@ -43,7 +43,12 @@ class PasswordController extends Controller
         $result = Password::reset(
             $request->only('email', 'password', 'password_confirmation', 'token'),
             function ($user, $password): void {
-                $user->forceFill(['password' => Hash::make($password)])
+                $user->forceFill([
+                    'password' => Hash::make($password),
+                    'force_password_reset_at' => null,
+                    'auth_revoked_at' => now(),
+                    'auth_session_version' => $user->auth_session_version + 1,
+                ])
                     ->setRememberToken(Str::random(60));
                 $user->save();
                 event(new PasswordReset($user));

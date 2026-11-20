@@ -111,10 +111,14 @@ class GlobalTenantUserController extends Controller
         $activity = AuditLog::where('tenant_id', $tenant->id)
             ->where('actor_id', $user->id)->latest('id')->limit(20)->get();
         $loginEvents = $user->loginEvents()->latest('id')->limit(12)->get();
+        $activeSessions = config('session.driver') === 'database'
+            ? DB::table(config('session.table', 'sessions'))
+                ->where('user_id', $user->id)->orderByDesc('last_activity')->limit(15)->get()
+            : collect();
 
         return view('platform.tenant-users.show', compact(
             'tenant', 'user', 'membership', 'roles', 'assignedRoleId',
-            'stores', 'assignments', 'activity', 'loginEvents'
+            'stores', 'assignments', 'activity', 'loginEvents', 'activeSessions'
         ));
     }
 
@@ -165,6 +169,45 @@ class GlobalTenantUserController extends Controller
         return back()->with('status', 'Business member access updated. Other businesses are unaffected.');
     }
 
+    public function revokeSessions(Request $request, Tenant $tenant, User $user): RedirectResponse
+    {
+        $tenant->users()->whereKey($user->id)->firstOrFail();
+        abort_if($user->is_platform_admin || $user->id === $request->user()->id, 403);
+
+        $data = $request->validate([
+            'admin_password' => ['required', 'string'],
+            'reason' => ['required', 'string', 'min:10', 'max:1000'],
+        ]);
+        if (! Hash::check($data['admin_password'], $request->user()->password)) {
+            throw ValidationException::withMessages(['admin_password' => 'Administrator password is incorrect.']);
+        }
+
+        DB::transaction(function () use ($request, $tenant, $user, $data): void {
+            $locked = User::whereKey($user->id)->lockForUpdate()->firstOrFail();
+            abort_if($locked->is_platform_admin, 403);
+            $locked->forceFill([
+                'auth_revoked_at' => now(),
+                'auth_session_version' => $locked->auth_session_version + 1,
+            ])->save();
+            $locked->setRememberToken(\Illuminate\Support\Str::random(60));
+            $locked->save();
+
+            if (config('session.driver') === 'database') {
+                DB::table(config('session.table', 'sessions'))
+                    ->where('user_id', $user->id)->delete();
+            }
+
+            AuditLog::create([
+                'tenant_id' => $tenant->id, 'actor_id' => $request->user()->id,
+                'action' => 'tenant.user.sessions_revoked',
+                'subject_type' => User::class, 'subject_id' => $user->id,
+                'metadata' => ['reason' => $data['reason']], 'ip_address' => $request->ip(),
+            ]);
+        });
+
+        return back()->with('status', 'All known sessions were revoked for this account.');
+    }
+
     public function forceReset(Request $request, Tenant $tenant, User $user): RedirectResponse
     {
         $membership = $tenant->users()->whereKey($user->id)->firstOrFail();
@@ -190,6 +233,7 @@ class GlobalTenantUserController extends Controller
             $locked->forceFill([
                 'force_password_reset_at' => now(),
                 'auth_revoked_at' => now(),
+                'auth_session_version' => $locked->auth_session_version + 1,
             ])->save();
             $locked->setRememberToken(\Illuminate\Support\Str::random(60));
             $locked->save();

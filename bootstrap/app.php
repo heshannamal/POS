@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsurePlatformAdmin;
+use App\Http\Middleware\EnsureAccountReady;
 use App\Http\Middleware\EnsurePlatformRole;
 use App\Http\Middleware\EnsurePermanentPlatformAdmin;
 use App\Http\Middleware\EnsurePermanentBillingReviewer;
@@ -20,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
+            'account.ready' => EnsureAccountReady::class,
             'platform.admin' => EnsurePlatformAdmin::class,
             'platform.role' => EnsurePlatformRole::class,
             'platform.permanent' => EnsurePermanentPlatformAdmin::class,

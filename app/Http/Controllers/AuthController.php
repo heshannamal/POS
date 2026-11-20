@@ -3,12 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\LoginEvent;
 use App\Models\PlatformSetting;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class AuthController extends Controller
@@ -32,6 +34,14 @@ class AuthController extends Controller
         ]);
 
         if (! Auth::attempt($credentials, $request->boolean('remember'))) {
+            $matched = User::where('email', mb_strtolower(trim($credentials['email'])))->first();
+            LoginEvent::create([
+                'user_id' => $matched?->id,
+                'email_hash' => hash('sha256', mb_strtolower(trim($credentials['email']))),
+                'outcome' => 'failed',
+                'ip_address' => $request->ip(),
+                'user_agent' => Str::limit((string) $request->userAgent(), 500, ''),
+            ]);
             return back()->withErrors(['email' => 'These credentials do not match our records.'])
                 ->onlyInput('email');
         }
@@ -46,9 +56,34 @@ class AuthController extends Controller
             ])->onlyInput('email');
         }
 
-        $request->session()->regenerate();
+        if ($request->user()->force_password_reset_at !== null) {
+            LoginEvent::create([
+                'user_id' => $request->user()->id,
+                'outcome' => 'reset_required',
+                'ip_address' => $request->ip(),
+                'user_agent' => Str::limit((string) $request->userAgent(), 500, ''),
+            ]);
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            return redirect()->route('password.request')->with(
+                'status', 'A password reset is required. Request a secure email link to regain access.'
+            );
+        }
 
-        return redirect()->intended($this->homeFor($request->user()));
+        $user = $request->user();
+        $user->forceFill(['last_login_at' => now(), 'last_login_ip' => $request->ip()])->save();
+        LoginEvent::create([
+            'user_id' => $user->id,
+            'email_hash' => hash('sha256', mb_strtolower($user->email)),
+            'outcome' => 'success',
+            'ip_address' => $request->ip(),
+            'user_agent' => Str::limit((string) $request->userAgent(), 500, ''),
+        ]);
+        $request->session()->regenerate();
+        $request->session()->put('account_session_version', (int) $user->auth_session_version);
+
+        return redirect()->intended($this->homeFor($user));
     }
 
     public function register(Request $request): RedirectResponse
@@ -65,6 +100,7 @@ class AuthController extends Controller
 
         Auth::login($user);
         $request->session()->regenerate();
+        $request->session()->put('account_session_version', (int) $user->auth_session_version);
 
         return redirect()->route('verification.notice');
     }

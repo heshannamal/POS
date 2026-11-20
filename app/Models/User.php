@@ -28,6 +28,8 @@ class User extends Authenticatable implements MustVerifyEmail
             'temporary_admin_expires_at' => 'datetime',
             'last_login_at' => 'datetime',
             'force_password_reset_at' => 'datetime',
+            'auth_revoked_at' => 'datetime',
+            'auth_session_version' => 'integer',
         ];
     }
 
