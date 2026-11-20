@@ -75,6 +75,6 @@ jobs:
           php artisan key:generate
       - name: Run all migrations on MySQL
         run: |
-          php artisan optimize:clear
+          php artisan config:clear
           php artisan migrate --force
           php artisan migrate:status
