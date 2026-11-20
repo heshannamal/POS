@@ -16,17 +16,17 @@
     $navItems = $platform ? [
         ['label' => 'Overview', 'icon' => '◫', 'route' => 'platform.dashboard', 'active' => 'platform.dashboard'],
         ['label' => 'Businesses', 'icon' => '▦', 'route' => 'platform.tenants.index', 'active' => 'platform.tenants.*'],
-        ['label' => 'Trials', 'icon' => '◷', 'route' => 'platform.tenants.index', 'active' => 'never', 'query' => ['status' => 'trial']],
-        ['label' => 'Subscriptions', 'icon' => '▤', 'route' => null],
-        ['label' => 'Modules & Plans', 'icon' => '◈', 'route' => null],
+        ['label' => 'Trials', 'icon' => '◷', 'route' => 'platform.trials.index', 'active' => 'platform.trials.*'],
+        ['label' => 'Plans & Modules', 'icon' => '◈', 'route' => 'platform.plans.index', 'active' => 'platform.plans.*'],
         ['label' => 'Platform Reports', 'icon' => '▥', 'route' => null],
     ] : [
         ['label' => 'Dashboard', 'icon' => '◫', 'route' => 'business.dashboard', 'active' => 'business.dashboard'],
         ['label' => 'POS', 'icon' => '▣', 'route' => null],
         ['label' => 'Sales', 'icon' => '▤', 'route' => null],
         ['label' => 'Products & Stock', 'icon' => '◇', 'route' => null],
-        ['label' => 'Employees', 'icon' => '♙', 'route' => null],
-        ['label' => 'Subscriptions', 'icon' => '▥', 'route' => null],
+        ['label' => 'Employees', 'icon' => '♙', 'route' => 'business.employees.index', 'active' => 'business.employees.*', 'can' => 'employees.view', 'feature' => 'staff.core'],
+        ['label' => 'Roles & Permissions', 'icon' => '⚿', 'route' => 'business.roles.index', 'active' => 'business.roles.*', 'can' => 'employees.view', 'feature' => 'staff.core'],
+        ['label' => 'Subscription', 'icon' => '▥', 'route' => 'business.subscription.index', 'active' => 'business.subscription.*'],
         ['label' => 'Reports', 'icon' => '▨', 'route' => null],
     ];
 @endphp
@@ -39,6 +39,9 @@
         <div class="sidebar-section-label">{{ $platform ? 'PLATFORM' : 'WORKSPACE' }}</div>
         <nav class="side-nav" aria-label="Main navigation">
             @foreach ($navItems as $item)
+                @if (!$platform && isset($item['can']) && (!app(\App\Services\TenantAuthorization::class)->allows(auth()->user(), $tenant, $item['can']) || !app(\App\Services\FeatureAccess::class)->allows($tenant, $item['feature'])))
+                    @continue
+                @endif
                 @if ($item['route'])
                     <a class="nav-pill {{ request()->routeIs($item['active'] ?? 'never') ? 'is-active' : '' }}"
                         href="{{ $platform ? route($item['route'], $item['query'] ?? []) : route($item['route'], $tenant) }}">

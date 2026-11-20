@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Platform;
 
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
+use App\Models\Module;
+use App\Models\Plan;
 use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\Tenant;
@@ -72,9 +74,11 @@ class TenantController extends Controller
 
     public function show(Tenant $tenant): View
     {
-        $tenant->load(['trial', 'users', 'branches']);
+        $tenant->load(['trial', 'users', 'branches', 'subscription.plan.modules', 'moduleGrants.module']);
+        $plans = Plan::where('is_active', true)->orderBy('name')->get();
+        $modules = Module::orderBy('category')->orderBy('name')->get();
 
-        return view('platform.tenants.show', compact('tenant'));
+        return view('platform.tenants.show', compact('tenant', 'plans', 'modules'));
     }
 
     public function status(Request $request, Tenant $tenant): RedirectResponse

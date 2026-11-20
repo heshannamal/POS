@@ -71,6 +71,10 @@ class AuthController extends Controller
             return route('verification.notice');
         }
 
+        if (session()->has('pending_staff_invite')) {
+            return route('staff.invites.show', session()->get('pending_staff_invite'));
+        }
+
         if ($user->is_platform_admin) {
             return route('platform.dashboard');
         }
