@@ -15,10 +15,17 @@
     $platform = request()->routeIs('platform.*');
     $navItems = $platform ? [
         ['label' => 'Overview', 'icon' => '◫', 'route' => 'platform.dashboard', 'active' => 'platform.dashboard'],
-        ['label' => 'Businesses', 'icon' => '▦', 'route' => 'platform.tenants.index', 'active' => 'platform.tenants.*'],
-        ['label' => 'Trials', 'icon' => '◷', 'route' => 'platform.trials.index', 'active' => 'platform.trials.*'],
-        ['label' => 'Plans & Modules', 'icon' => '◈', 'route' => 'platform.plans.index', 'active' => 'platform.plans.*'],
-        ['label' => 'Platform Reports', 'icon' => '▥', 'route' => null],
+        ['label' => 'Businesses', 'icon' => '▦', 'route' => 'platform.tenants.index', 'active' => 'platform.tenants.*', 'access' => ['operations']],
+        ['label' => 'Trials', 'icon' => '◷', 'route' => 'platform.trials.index', 'active' => 'platform.trials.*', 'access' => ['operations']],
+        ['label' => 'Subscriptions', 'icon' => '▤', 'route' => 'platform.subscriptions.index', 'active' => 'platform.subscriptions.*', 'access' => ['billing']],
+        ['label' => 'Plans', 'icon' => '◈', 'route' => 'platform.plans.index', 'active' => 'platform.plans.*', 'access' => ['billing']],
+        ['label' => 'Modules', 'icon' => '◇', 'route' => 'platform.modules.index', 'active' => 'platform.modules.*', 'access' => ['billing']],
+        ['label' => 'Reports', 'icon' => '▥', 'route' => 'platform.reports.index', 'active' => 'platform.reports.*', 'access' => ['auditor','operations','billing']],
+        ['label' => 'Support Inbox', 'icon' => '✉', 'route' => 'platform.support.index', 'active' => 'platform.support.*', 'access' => ['support','operations']],
+        ['label' => 'Announcements', 'icon' => '◉', 'route' => 'platform.announcements.index', 'active' => 'platform.announcements.*', 'access' => ['support','operations']],
+        ['label' => 'Audit Log', 'icon' => '▨', 'route' => 'platform.audit.index', 'active' => 'platform.audit.*', 'access' => ['auditor']],
+        ['label' => 'Administrators', 'icon' => '♙', 'route' => 'platform.admins.index', 'active' => 'platform.admins.*', 'access' => ['super_admin'], 'permanent' => true],
+        ['label' => 'Settings', 'icon' => '⚙', 'route' => 'platform.settings.index', 'active' => 'platform.settings.*', 'access' => ['super_admin'], 'permanent' => true],
     ] : [
         ['label' => 'Dashboard', 'icon' => '◫', 'route' => 'business.dashboard', 'active' => 'business.dashboard'],
         ['label' => 'POS', 'icon' => '▣', 'route' => null],
@@ -27,6 +34,7 @@
         ['label' => 'Employees', 'icon' => '♙', 'route' => 'business.employees.index', 'active' => 'business.employees.*', 'can' => 'employees.view', 'feature' => 'staff.core'],
         ['label' => 'Roles & Permissions', 'icon' => '⚿', 'route' => 'business.roles.index', 'active' => 'business.roles.*', 'can' => 'employees.view', 'feature' => 'staff.core'],
         ['label' => 'Subscription', 'icon' => '▥', 'route' => 'business.subscription.index', 'active' => 'business.subscription.*'],
+        ['label' => 'Support', 'icon' => '✉', 'route' => 'business.support.index', 'active' => 'business.support.*', 'can' => 'settings.manage'],
         ['label' => 'Reports', 'icon' => '▨', 'route' => null],
     ];
 @endphp
@@ -41,11 +49,16 @@
             @foreach ($navItems as $item)
                 @php
                     $visible = true;
+                    if ($platform && isset($item['access'])) {
+                        $role = auth()->user()->platformRole();
+                        $visible = ($role === 'super_admin' || in_array($role, $item['access'], true))
+                            && (!isset($item['permanent']) || auth()->user()->isPermanentPlatformAdmin());
+                    }
                     if (!$platform && isset($item['can'])) {
                         $authorization = app(\App\Services\TenantAuthorization::class);
                         $featureAccess = app(\App\Services\FeatureAccess::class);
                         $visible = $authorization->allows(auth()->user(), $tenant, $item['can'])
-                            && $featureAccess->allows($tenant, $item['feature']);
+                            && (!isset($item['feature']) || $featureAccess->allows($tenant, $item['feature']));
                     }
                 @endphp
                 @if (!$visible)
@@ -69,7 +82,11 @@
                     <span><strong>{{ $tenant->name }}</strong><small>{{ ucfirst($tenant->effective_status) }} workspace</small></span>
                 </div>
             @endif
-            <a class="nav-pill" href="{{ route('onboarding.create') }}"><span class="nav-icon">＋</span> Add business</a>
+            @if(!$platform)
+                <a class="nav-pill" href="{{ route('onboarding.create') }}"><span class="nav-icon">＋</span> Add business</a>
+            @elseif(in_array(auth()->user()->platformRole(), ['super_admin','operations'], true))
+                <a class="nav-pill" href="{{ route('platform.tenants.create') }}"><span class="nav-icon">＋</span> Add business</a>
+            @endif
             <form action="{{ route('logout') }}" method="post">@csrf
                 <button type="submit" class="nav-pill logout-button"><span class="nav-icon">↪</span> Sign out</button>
             </form>
