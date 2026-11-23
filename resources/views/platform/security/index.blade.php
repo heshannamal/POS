@@ -7,6 +7,7 @@
     <div class="page-actions">
         <a class="btn btn-outline" href="{{ route('platform.audit.index') }}">Audit history →</a>
         @if(auth()->user()->isPermanentPlatformAdmin() && auth()->user()->platformRole()==='super_admin')
+            <a class="btn btn-secondary" href="{{ route('platform.security.sessions.index') }}">All sessions →</a>
             <a class="btn btn-secondary" href="{{ route('platform.security.roles.index') }}">Custom roles →</a>
         @endif
     </div>

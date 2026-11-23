@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Security\TwoFactorController;
 use App\Http\Controllers\Security\SessionController;
 use App\Http\Controllers\Platform\SecurityDashboardController;
+use App\Http\Controllers\Platform\AdminSessionsController;
 use App\Http\Controllers\Platform\PlatformRoleController;
 use App\Http\Controllers\BusinessDashboardController;
 use App\Http\Controllers\Business\EmployeeController;
@@ -284,6 +285,9 @@ Route::middleware(['auth', 'verified', 'account.ready'])->group(function (): voi
                     ->middleware('throttle:5,1')->name('tenant-users.force-reset');
                 Route::post('/tenant-users/{tenant:slug}/{user}/revoke-sessions', [GlobalTenantUserController::class, 'revokeSessions'])
                     ->middleware('throttle:5,1')->name('tenant-users.revoke-sessions');
+                Route::get('/security/sessions', [AdminSessionsController::class, 'index'])->name('security.sessions.index');
+                Route::delete('/security/sessions/{session}', [AdminSessionsController::class, 'revoke'])
+                    ->middleware('throttle:5,1')->name('security.sessions.revoke');
                 Route::get('/security/roles', [PlatformRoleController::class, 'index'])->name('security.roles.index');
                 Route::post('/security/roles', [PlatformRoleController::class, 'store'])->middleware('throttle:5,1')->name('security.roles.store');
                 Route::put('/security/roles/{role}', [PlatformRoleController::class, 'update'])->middleware('throttle:5,1')->name('security.roles.update');
