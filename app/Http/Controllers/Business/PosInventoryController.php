@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Business;
 
 use App\Http\Controllers\Controller;
+use App\Services\PosBranchAccess;
 use App\Models\AuditLog;
 use App\Models\Branch;
 use App\Models\PosProduct;
@@ -17,7 +18,8 @@ class PosInventoryController extends Controller
 {
     public function index(Request $request, Tenant $tenant)
     {
-        $branches = Branch::where('tenant_id',$tenant->id)->orderBy('name')->get();
+        $allowed=app(PosBranchAccess::class)->ids($request->user(),$tenant);
+        $branches = Branch::where('tenant_id',$tenant->id)->whereIn('id',$allowed)->orderBy('name')->get();
         $branch = $branches->firstWhere('id',(int) $request->query('branch_id')) ?? $branches->first();
         $stocks = $branch ? PosProduct::where('tenant_id',$tenant->id)->where('track_stock',true)->with([
             'stocks'=>fn($q)=>$q->where('branch_id',$branch->id)
@@ -39,6 +41,7 @@ class PosInventoryController extends Controller
             'note'=>'nullable|string|max:1000',
         ]);
         DB::transaction(function () use ($tenant,$request,$data) {
+            app(PosBranchAccess::class)->ensure($request->user(),$tenant,(int)$data['branch_id']);
             $product = PosProduct::where('tenant_id',$tenant->id)->findOrFail($data['product_id']);
             abort_unless($product->track_stock && $product->is_active,422);
             // Serialize creation of new stock rows via branch row locking.
@@ -75,6 +78,8 @@ class PosInventoryController extends Controller
             'quantity'=>'required|integer|min:1|max:1000000',
         ]);
         DB::transaction(function () use ($tenant,$request,$data) {
+            app(PosBranchAccess::class)->ensure($request->user(),$tenant,(int)$data['from_branch_id']);
+            app(PosBranchAccess::class)->ensure($request->user(),$tenant,(int)$data['to_branch_id']);
             $product = PosProduct::where('tenant_id',$tenant->id)->where('track_stock',true)->findOrFail($data['product_id']);
             // Lock branches in stable order to prevent concurrent creation/deadlock.
             Branch::where('tenant_id',$tenant->id)->whereIn('id',[$data['from_branch_id'],$data['to_branch_id']])
