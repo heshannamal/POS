@@ -4,12 +4,14 @@
 @section('content')
 <div class="page-head"><div><span class="overline">POS OPERATIONS</span><h1>Cash registers & shifts</h1><p class="muted">Open, reconcile and close a cash drawer for each cashier. All amounts in {{ $tenant->currency }}.</p></div><a href="{{ route('business.pos.terminal',$tenant) }}" class="btn btn-secondary">POS terminal →</a></div>
 <div class="dashboard-grid">
+@if(app(\App\Services\TenantAuthorization::class)->allows(auth()->user(),$tenant,'pos.register.manage'))
 <section class="panel"><h2>Create register</h2>
 <form method="post" action="{{ route('business.pos.registers.create',$tenant) }}" class="form-stack">@csrf
 <label>Branch <select name="branch_id" required class="form-control">@foreach($branches as $branch)<option value="{{ $branch->id }}">{{ $branch->name }}</option>@endforeach</select></label>
 <label>Register name <input class="form-control" name="name" placeholder="Front counter 1" required maxlength="120"></label>
 <button class="btn btn-primary">Create register</button></form>
 </section>
+@endif
 <section class="panel"><h2>Open a cashier shift</h2>
 <form method="post" action="{{ route('business.pos.shifts.open',$tenant) }}" class="form-stack">@csrf
 <label>Register <select name="register_id" class="form-control" required>@foreach($registers as $register)@if($register->is_active && !$openShifts->contains('register_id',$register->id))<option value="{{ $register->id }}">{{ $register->branch_name }} / {{ $register->name }}</option>@endif @endforeach</select></label>
@@ -18,7 +20,8 @@
 </form><p class="muted">One open shift per register and cashier.</p></section>
 </div>
 <section class="panel"><h2>Registered cash drawers</h2><div style="overflow-x:auto"><table class="data-table" style="width:100%"><thead><tr><th>Name</th><th>Branch</th><th>Status</th><th>Action</th></tr></thead><tbody>
-@forelse($registers as $register)<tr><td>{{ $register->name }}</td><td>{{ $register->branch_name }}</td><td>{{ $register->is_active?'Active':'Inactive' }}</td><td><form method="post" action="{{ route('business.pos.registers.toggle',[$tenant,$register->id]) }}">@csrf @method('PATCH')<button class="btn btn-secondary">{{ $register->is_active?'Deactivate':'Activate' }}</button></form></td></tr>
+@forelse($registers as $register)<tr><td>{{ $register->name }}</td><td>{{ $register->branch_name }}</td><td>{{ $register->is_active?'Active':'Inactive' }}</td><td>@if(app(\App\Services\TenantAuthorization::class)->allows(auth()->user(),$tenant,'pos.register.manage'))
+<form method="post" action="{{ route('business.pos.registers.toggle',[$tenant,$register->id]) }}">@csrf @method('PATCH')<button class="btn btn-secondary">{{ $register->is_active?'Deactivate':'Activate' }}</button></form>@else — @endif</td></tr>
 @empty<tr><td colspan="4">No registers created.</td></tr>@endforelse
 </tbody></table></div></section>
 <section class="panel"><h2>Open shifts</h2>
