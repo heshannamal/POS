@@ -135,4 +135,37 @@ class PlatformSecurityAdministrationTest extends TestCase
         $this->actingAs($user)->get(route('platform.dashboard'))
             ->assertRedirect(route('password.request'));
     }
+
+    public function test_only_permanent_super_can_review_and_revoke_individual_platform_sessions(): void
+    {
+        $super = $this->admin();
+        $operations = $this->admin('operations');
+        $target = User::factory()->create(['email' => 'employee-session@example.test']);
+        $session = UserSecuritySession::create([
+            'user_id' => $target->id,
+            'session_hash' => hash('sha256', 'unrelated-session'),
+            'ip_address' => '192.0.2.10',
+            'user_agent' => 'Firefox Test Device',
+            'last_seen_at' => now(),
+        ]);
+
+        $this->actingAs($operations)->get(route('platform.security.sessions.index'))->assertForbidden();
+
+        $this->actingAs($super)->get(route('platform.security.sessions.index'))
+            ->assertOk()->assertSee('employee-session@example.test')->assertSee('Firefox Test Device');
+
+        $this->actingAs($super)->delete(route('platform.security.sessions.revoke', $session), [
+            'password' => 'wrong', 'reason' => 'Lost work device reported.',
+        ])->assertSessionHasErrors('password');
+
+        $this->actingAs($super)->delete(route('platform.security.sessions.revoke', $session), [
+            'password' => 'password', 'reason' => 'Lost work device reported.',
+        ])->assertRedirect();
+
+        $this->assertNotNull($session->fresh()->revoked_at);
+        $this->assertDatabaseHas('audit_logs', [
+            'actor_id' => $super->id, 'action' => 'security.session.admin_revoked',
+            'subject_id' => $session->id,
+        ]);
+    }
 }
