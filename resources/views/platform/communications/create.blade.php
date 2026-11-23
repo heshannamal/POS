@@ -40,7 +40,8 @@
         <div class="panel-heading"><div><h2>Allowed custom variables</h2><p class="muted">Click a placeholder to add it at your cursor.</p></div></div>
         <div class="communication-variables">
             @foreach(config('communications.custom_variables',[]) as $name)
-                <button type="button" class="communication-variable" data-insert-variable="{{ '{{'.$name.'}}' }}">{{ '{{'.$name.'}}' }}</button>
+                @php $placeholder = '{'.'{'.$name.'}'.'}'; @endphp
+                <button type="button" class="communication-variable" data-insert-variable="{{ $placeholder }}">{{ $placeholder }}</button>
             @endforeach
         </div>
         <div class="hint-box" style="margin-top:16px">These are placeholders for future manual workflows. Creating a custom draft does not make its variables available automatically, create a recipient list, or enable SMTP. Built-in event templates are the only messages that automation sends in this release.</div>

@@ -41,13 +41,14 @@
         <div class="panel-heading"><div><h2>Available variables</h2><p class="muted">Click to insert into the editor at the cursor. Variables stay unchanged in preview.</p></div></div>
         <div class="communication-variables">
         @foreach($template->allowed_variables ?? [] as $variable)
-            <button class="communication-variable" type="button" data-insert-variable="{{ '{{'.$variable.'}}' }}">{{ '{{'.$variable.'}}' }}</button>
+            @php $placeholder = '{'.'{'.$variable.'}'.'}'; @endphp
+            <button class="communication-variable" type="button" data-insert-variable="{{ $placeholder }}">{{ $placeholder }}</button>
         @endforeach
         </div>
         <div class="hint-box" style="margin-top:16px">
             <strong>Formatting examples</strong>
             <p><code>**Bold text**</code> · <code>*Italic text*</code></p>
-            <p><code>[Open dashboard]({{ '{{business_url}}' }})</code></p>
+            <p><code>[Open dashboard](@verbatim{{business_url}}@endverbatim)</code></p>
             <p>Use the preview button to see the server-rendered HTML. Invalid variables are rejected when saving.</p>
         </div>
         <div class="hint-box" style="margin-top:16px">This template controls Phase 5 event messages. Existing password-reset and invitation emails in <code>config/pos_emails.php</code> are kept for compatibility; their credentials also use your private <code>.env</code>.</div>
