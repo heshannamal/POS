@@ -149,9 +149,11 @@ Route::middleware(['auth', 'verified', 'account.ready'])->group(function (): voi
                 Route::get('/sales/{sale}/receipt', [PosSalesController::class, 'receipt'])->name('pos.receipt');
             });
             Route::middleware('tenant.permission:pos.register.manage')->group(function (): void {
-                Route::get('/registers', [PosRegisterController::class, 'index'])->name('pos.registers');
                 Route::post('/registers', [PosRegisterController::class, 'create'])->middleware('pos.operational')->name('pos.registers.create');
                 Route::patch('/registers/{register}/status', [PosRegisterController::class, 'toggle'])->middleware('pos.operational')->name('pos.registers.toggle');
+            });
+            Route::middleware('tenant.permission:pos.shifts.operate')->group(function (): void {
+                Route::get('/registers', [PosRegisterController::class, 'index'])->name('pos.registers');
                 Route::post('/registers/shifts', [PosRegisterController::class, 'open'])->middleware('pos.operational')->name('pos.shifts.open');
                 Route::post('/registers/shifts/{shift}/movements', [PosRegisterController::class, 'movement'])->middleware('pos.operational')->name('pos.shifts.movement');
                 Route::post('/registers/shifts/{shift}/close', [PosRegisterController::class, 'close'])->name('pos.shifts.close');
