@@ -5,6 +5,7 @@ use App\Http\Controllers\Business\PosCatalogController;
 use App\Http\Controllers\Business\PosInventoryController;
 use App\Http\Controllers\Business\PosSalesController;
 use App\Http\Controllers\Business\PosRegisterController;
+use App\Http\Controllers\Business\PosDeviceManagementController;
 use App\Http\Controllers\Business\PosReturnController;
 use App\Http\Controllers\Business\PosReportsController;
 use App\Http\Controllers\Business\PurchasingSupplierController;
@@ -163,6 +164,12 @@ Route::middleware(['auth', 'verified', 'account.ready'])->group(function (): voi
                 Route::post('/registers/shifts', [PosRegisterController::class, 'open'])->middleware('pos.operational')->name('pos.shifts.open');
                 Route::post('/registers/shifts/{shift}/movements', [PosRegisterController::class, 'movement'])->middleware('pos.operational')->name('pos.shifts.movement');
                 Route::post('/registers/shifts/{shift}/close', [PosRegisterController::class, 'close'])->name('pos.shifts.close');
+            });
+            Route::middleware('tenant.permission:settings.manage')->group(function (): void {
+                Route::get('/application-devices', [PosDeviceManagementController::class,'index'])
+                    ->name('pos.devices.index');
+                Route::delete('/application-devices/{device}', [PosDeviceManagementController::class,'revoke'])
+                    ->middleware('throttle:20,1')->name('pos.devices.revoke');
             });
             Route::middleware('tenant.permission:pos.returns.manage')->group(function (): void {
                 Route::get('/returns', [PosReturnController::class, 'index'])->name('pos.returns');
