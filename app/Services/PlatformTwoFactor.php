@@ -19,7 +19,7 @@ class PlatformTwoFactor
 
     public function enrolled(User $user): bool
     {
-        return $user->two_factor_secret !== null && $user->two_factor_confirmed_at !== null;
+        return $this->required($user);
     }
 
     public function verified(Request $request): bool
@@ -44,8 +44,6 @@ class PlatformTwoFactor
 
     public function destination(Request $request): string
     {
-        return $this->enrolled($request->user())
-            ? route('security.challenge')
-            : route('security.setup');
+        return route('security.challenge');
     }
 }
