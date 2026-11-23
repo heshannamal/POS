@@ -29,11 +29,40 @@ class PosCheckoutService
             'payment_reference'=>'nullable|string|max:120',
         ]);
 
-        $sale=DB::transaction(function ()use($data,$tenant,$request){
+        // Fingerprint the transaction's intended content, independent of item order.
+        $normalized=[];
+        foreach($data['items'] as $item){
+            $product=(int)$item['product_id'];
+            $normalized[$product]=($normalized[$product]??0)+(int)$item['quantity'];
+        }
+        ksort($normalized,SORT_NUMERIC);
+        $fingerprint=hash('sha256',json_encode([
+            'branch_id'=>(int)$data['branch_id'],
+            'shift_id'=>(int)$data['shift_id'],
+            'items'=>$normalized,'discount_minor'=>(int)($data['discount_minor']??0),
+            'payment_method'=>$data['payment_method'],
+            'payment_reference'=>$data['payment_reference']??null,
+        ],JSON_THROW_ON_ERROR));
+
+        $sale=DB::transaction(function ()use($data,$tenant,$request,$fingerprint){
             // Lock tenant to serialize same-key checkouts and safeguard stock-row creation.
             Tenant::whereKey($tenant->id)->lockForUpdate()->firstOrFail();
             $existing=PosSale::where('tenant_id',$tenant->id)->where('idempotency_key',$data['idempotency_key'])->first();
-            if($existing){return $existing;}
+            if($existing){
+                // Old sales have a NULL fingerprint: only their originating cashier,
+                // branch and shift may recover them through legacy keys.
+                $matchingContext=(int)$existing->cashier_id===$request->user()->id
+                    && (int)$existing->branch_id===(int)$data['branch_id']
+                    && (int)$existing->shift_id===(int)$data['shift_id'];
+                if(!$matchingContext || ($existing->request_hash!==null
+                    && !hash_equals($existing->request_hash,$fingerprint))) {
+                    throw ValidationException::withMessages([
+                        'idempotency_key'=>'This transaction key belongs to a different sale.',
+                    ]);
+                }
+                app(PosBranchAccess::class)->ensure($request->user(),$tenant,(int)$existing->branch_id);
+                return $existing;
+            }
             $branch=Branch::where('tenant_id',$tenant->id)->where('is_active',true)->findOrFail($data['branch_id']);
             app(PosBranchAccess::class)->ensure($request->user(),$tenant,$branch->id);
             $shift=DB::table('pos_shifts as s')->join('pos_registers as r','r.id','=','s.register_id')
@@ -90,7 +119,7 @@ class PosCheckoutService
             }
             $sale=PosSale::create([
                 'tenant_id'=>$tenant->id,'branch_id'=>$branch->id,'shift_id'=>$shift->id,'cashier_id'=>$request->user()->id,
-                'idempotency_key'=>$data['idempotency_key'],'status'=>'completed',
+                'idempotency_key'=>$data['idempotency_key'],'request_hash'=>$fingerprint,'status'=>'completed',
                 'subtotal_minor'=>$subtotal,'discount_minor'=>$discount,'total_minor'=>$subtotal-$discount,
                 'currency'=>$tenant->currency,'completed_at'=>now(),
             ]);
