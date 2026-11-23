@@ -171,7 +171,11 @@ class CommunicationController extends Controller
                 'test_recipients'=>'Add at least one test recipient before enabling test mode email delivery.',
             ]);
         }
-        if ($data['email_enabled'] && !$data['test_mode'] && in_array(config('mail.default'),['log','array','failover'],true)) {
+        if ($data['email_enabled'] && !$data['test_mode'] && (
+            in_array(config('mail.default'),['log','array','failover'],true)
+            || (config('mail.default') === 'smtp'
+                && (!config('mail.mailers.smtp.username') || !config('mail.mailers.smtp.host')))
+        )) {
             throw ValidationException::withMessages([
                 'email_enabled'=>'Use an explicitly configured SMTP/transactional transport before enabling real-recipient delivery.',
             ]);
@@ -245,6 +249,12 @@ class CommunicationController extends Controller
             throw ValidationException::withMessages(['delivery'=>'Enable email sending first.']);
         }
 
+        if (PlatformSetting::valueFor('communications.test_mode','1')==='1') {
+            $allowlist = explode(',', PlatformSetting::valueFor('communications.test_recipients',''));
+            if (! in_array($delivery->recipient_email,$allowlist,true)) {
+                throw ValidationException::withMessages(['delivery'=>'This recipient is not on the current test allowlist.']);
+            }
+        }
         DB::transaction(function () use ($request,$delivery): void {
             $delivery->update(['status'=>'queued','attempts'=>0,'last_error'=>null,'queued_at'=>now()]);
             SendCommunicationDelivery::dispatch($delivery->id)->afterCommit();

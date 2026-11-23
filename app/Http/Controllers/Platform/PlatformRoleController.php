@@ -43,10 +43,10 @@ class PlatformRoleController extends Controller
         }
         $allowedByScope = [
             'operations' => ['dashboard.view', 'tenants.view', 'tenants.manage', 'stores.view', 'stores.manage',
-                'users.view', 'users.manage', 'trials.view', 'trials.manage', 'reports.view', 'support.view', 'support.manage'],
-            'billing' => ['dashboard.view', 'tenants.view', 'billing.view', 'billing.manage', 'reports.view'],
-            'support' => ['dashboard.view', 'tenants.view', 'stores.view', 'users.view', 'support.view', 'support.manage'],
-            'auditor' => ['dashboard.view', 'reports.view', 'audit.view', 'audit.export', 'security.view'],
+                'users.view', 'users.manage', 'trials.view', 'trials.manage', 'reports.view', 'support.view', 'support.manage', 'notifications.view'],
+            'billing' => ['dashboard.view', 'tenants.view', 'billing.view', 'billing.manage', 'reports.view', 'notifications.view'],
+            'support' => ['dashboard.view', 'tenants.view', 'stores.view', 'users.view', 'support.view', 'support.manage', 'notifications.view'],
+            'auditor' => ['dashboard.view', 'reports.view', 'audit.view', 'audit.export', 'security.view', 'notifications.view'],
         ];
         $allowed = [];
         foreach ($data['scopes'] as $scope) {

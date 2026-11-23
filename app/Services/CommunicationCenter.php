@@ -28,7 +28,7 @@ class CommunicationCenter
             'subscription.payment.approved' => 'payment.approved',
             'subscription.payment.rejected' => 'payment.rejected',
             'support.ticket.created' => 'support.opened',
-            'support.customer.replied' => 'support.opened',
+            'support.customer.replied' => 'support.customer_replied',
             'support.ticket.replied' => 'support.replied',
             'employee.invited' => 'staff.invited',
         ];
@@ -68,7 +68,7 @@ class CommunicationCenter
             if ($ticket && $ticket->tenant_id === $tenant->id) {
                 $variables['ticket_id'] = (string) $ticket->id;
                 $variables['ticket_subject'] = $ticket->subject;
-                $variables['ticket_url'] = $event === 'support.opened'
+                $variables['ticket_url'] = in_array($event, ['support.opened','support.customer_replied'], true)
                     ? route('platform.support.show', $ticket)
                     : route('business.support.show', [$tenant, $ticket]);
             }
@@ -129,17 +129,21 @@ class CommunicationCenter
             PlatformSetting::valueFor('communications.test_recipients', '')))));
 
         foreach ($recipients as $recipient) {
+            $targetUrl = $path;
+            if ($recipient->is_platform_admin && $tenant && $event === 'business.created') {
+                $targetUrl = route('platform.tenants.show', $tenant);
+            }
             $preference = UserNotificationPreference::where('user_id', $recipient->id)
                 ->where('event_key', $event)->first();
             $key = hash('sha256', $sourceKey.'|'.$event.'|'.$recipient->id);
 
-            if ($rule->send_in_app && ($preference?->in_app_enabled ?? true)) {
+            if ($rule->send_in_app && ($event === 'security.alert' || ($preference?->in_app_enabled ?? true))) {
                 UserNotification::firstOrCreate([
                     'recipient_user_id' => $recipient->id, 'dedupe_key' => $key,
                 ], [
                     'tenant_id' => $tenant?->id, 'event_key' => $event,
                     'title' => $subject, 'message' => mb_substr($message, 0, 2000),
-                    'action_url' => $path,
+                    'action_url' => $targetUrl,
                 ]);
             }
 
@@ -189,7 +193,7 @@ class CommunicationCenter
     {
         return match ($event) {
             'payment.submitted', 'payment.approved', 'payment.rejected' => $vars['payment_url'] ?? null,
-            'support.opened', 'support.replied' => $vars['ticket_url'] ?? null,
+            'support.opened', 'support.replied', 'support.customer_replied' => $vars['ticket_url'] ?? null,
             'security.alert' => route('platform.security.index'),
             default => $tenant ? route('business.dashboard', $tenant) : null,
         };

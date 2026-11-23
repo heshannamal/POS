@@ -30,6 +30,8 @@ class AppServiceProvider extends ServiceProvider
         // Notifications never decide the outcome of a payment, trial, or
         // support transaction. Process only after the original commit.
         AuditLog::created(function (AuditLog $audit): void {
+            if ($audit->action === 'support.ticket.replied'
+                && ($audit->metadata['internal_note'] ?? false)) return;
             if (! in_array($audit->action, [
                 'tenant.created','subscription.payment.submitted',
                 'subscription.payment.approved','subscription.payment.rejected',

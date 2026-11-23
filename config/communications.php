@@ -39,6 +39,11 @@ return [
             'variables' => ['platform_name','business_name','ticket_id','ticket_subject','ticket_url'],
             'to_platform' => true, 'platform_roles' => ['super_admin','support','operations'],
         ],
+        'support.customer_replied' => [
+            'name' => 'Customer replied to support ticket',
+            'variables' => ['platform_name','business_name','ticket_id','ticket_subject','ticket_url'],
+            'to_platform' => true, 'platform_roles' => ['super_admin','support','operations'],
+        ],
         'support.replied' => [
             'name' => 'Support ticket reply',
             'variables' => ['platform_name','business_name','ticket_id','ticket_subject','ticket_url'],
