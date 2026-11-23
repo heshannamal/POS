@@ -4,12 +4,12 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Tenant;
+use App\Models\AuditLog;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class DeviceAuthController extends Controller
@@ -35,6 +35,9 @@ class DeviceAuthController extends Controller
         $valid=$user && $tenant && Hash::check($data['password'],$user->password)
             && !$user->is_platform_admin && !$user->isTemporaryAdminExpired()
             && $user->hasVerifiedEmail() && $user->force_password_reset_at===null
+            && !((int)config('platform_security.password_expiry_days',0)>0 &&
+                $user->password_changed_at && $user->password_changed_at->lt(
+                    now()->subDays((int)config('platform_security.password_expiry_days'))))
             && $tenant->users()->whereKey($user->id)->wherePivot('status','active')->exists()
             && in_array($tenant->effective_status,['active','trial'],true);
         if(!$valid){
@@ -83,7 +86,13 @@ class DeviceAuthController extends Controller
             $token=$user->createToken('pos-device:'.$id,[
                 'tenant:'.$tenant->id,'device:'.$id,
             ],now()->addDays($days));
-            return ['token'=>$token->plainTextToken,'expires_at'=>now()->addDays($days)->toIso8601String(),'device_id'=>$id];
+            AuditLog::create([
+                'tenant_id'=>$tenant->id,'actor_id'=>$user->id,
+                'action'=>'api.device.login','subject_type'=>'pos_api_device','subject_id'=>$id,
+                'metadata'=>['platform'=>$data['platform']],'ip_address'=>$request->ip(),
+            ]);
+            return ['token'=>$token->plainTextToken,
+                'expires_at'=>$token->accessToken->expires_at->toIso8601String(),'device_id'=>$id];
         },3);
         return response()->json([
             'data'=>['access_token'=>$result['token'],'token_type'=>'Bearer',
@@ -95,6 +104,12 @@ class DeviceAuthController extends Controller
 
     public function logout(Request $request,Tenant $tenant)
     {
+        AuditLog::create([
+            'tenant_id'=>$tenant->id,'actor_id'=>$request->user()->id,
+            'action'=>'api.device.logout','subject_type'=>'pos_api_device',
+            'subject_id'=>$request->attributes->get('pos_api_device')->id,
+            'ip_address'=>$request->ip(),
+        ]);
         $request->user()->currentAccessToken()->delete();
         return response()->json(['message'=>'Device session signed out.']);
     }
@@ -118,6 +133,11 @@ class DeviceAuthController extends Controller
                 'is_active'=>false,'revoked_at'=>now(),'updated_at'=>now(),
             ]);
             $request->user()->tokens()->where('name','pos-device:'.$device)->delete();
+            AuditLog::create([
+                'tenant_id'=>$tenant->id,'actor_id'=>$request->user()->id,
+                'action'=>'api.device.revoked','subject_type'=>'pos_api_device',
+                'subject_id'=>$device,'ip_address'=>$request->ip(),
+            ]);
         },3);
         return response()->json(['message'=>'Device revoked.']);
     }
