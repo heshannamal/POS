@@ -100,7 +100,7 @@ For Phase 9 commit `447b95c`, GitHub Actions confirmed:
 - Phase 9 route authorization tests: passed
 - MySQL 8.4 migrations: passed
 
-The broader legacy feature test suite **still fails** (numerous existing platform, 2FA and billing assertions, many unexpected redirects). Do not regard the release as production-ready; isolate these regression failures and repeat full tests before deployment. Later commits should be checked for their own CI results.
+**Phase 9.6 update:** CI run [45248289909](https://github.com/heshannamal/POS/actions/runs/45248289909) passed the full 135-test suite (1,211 assertions), Phase 9 route/device tests, MySQL 8.4 migrations and frontend build. Legacy administrator TOTP tests were updated to the current email OTP flow; the testing-only policy override avoids unrelated admin redirects. Real devices and deployment infrastructure are still unverified.
 
 ## Phase 9.6 implementation
 See [Phase 9.6 integration and rollout notes](PHASE9-6-API-STABILIZATION.md) for new shift endpoints, device management, retry semantics and CI limitations.
