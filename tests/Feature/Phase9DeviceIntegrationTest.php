@@ -117,6 +117,9 @@ class Phase9DeviceIntegrationTest extends TestCase
         $this->assertSame(1,DB::table('pos_sales')->where('tenant_id',$f['tenant']->id)->count());
         $this->assertSame(3,(int)DB::table('pos_stocks')->where('product_id',$product->id)
             ->where('branch_id',$f['branch']->id)->value('quantity'));
+        $payload['items'][0]['quantity']=1;
+        $this->withHeaders($this->headers($token))->postJson($uri.'/sales',$payload)
+            ->assertUnprocessable()->assertJsonValidationErrors('idempotency_key');
         $payload['idempotency_key']=(string)Str::uuid();
         $payload['items'][0]['quantity']=4;
         $this->withHeaders($this->headers($token))->postJson($uri.'/sales',$payload)
