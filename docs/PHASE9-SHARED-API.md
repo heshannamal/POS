@@ -89,3 +89,13 @@ Content-Type: application/json
 - Prevent logins on unverified or forced-reset accounts. A revoked device identity cannot be reactivated using the same UUID. Users can register a fresh UUID after security review.
 - Revoke a lost device via its `DELETE /devices/{id}` endpoint while signed in on another active device, or revoke its tokens and device record through an authorized administrator workflow. A staff member cannot revoke another user's devices via the v1 API.
 - Migration, PHP tests, API permissions, mobile secure storage and device acceptance must be tested locally prior to any production deployment.
+
+## GitHub Actions verification
+
+For Phase 9 commit `447b95c`, GitHub Actions confirmed:
+- PHP syntax lint: passed
+- Blade compilation: passed
+- Phase 9 route authorization tests: passed
+- MySQL 8.4 migrations: passed
+
+The broader legacy feature test suite **still fails** (numerous existing platform, 2FA and billing assertions, many unexpected redirects). Do not regard the release as production-ready; isolate these regression failures and repeat full tests before deployment. Later commits should be checked for their own CI results.
