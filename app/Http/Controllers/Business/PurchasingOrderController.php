@@ -19,7 +19,7 @@ class PurchasingOrderController extends Controller
         $branches=$tenant->branches()->whereIn('id',app(PosBranchAccess::class)->ids($request->user(),$tenant))->orderBy('name')->get();
         $suppliers=DB::table('pos_suppliers')->where('tenant_id',$tenant->id)->whereNull('deleted_at')
             ->where('is_active',true)->orderBy('name')->get();
-        $products=PosProduct::where('tenant_id',$tenant->id)->where('is_active',true)->orderBy('name')->get();
+        $products=PosProduct::where('tenant_id',$tenant->id)->where('is_active',true)->where('track_stock',true)->orderBy('name')->get();
         $orders=DB::table('pos_purchase_orders as o')
             ->join('pos_suppliers as s','s.id','=','o.supplier_id')
             ->join('branches as b','b.id','=','o.branch_id')
@@ -63,7 +63,7 @@ class PurchasingOrderController extends Controller
                 throw ValidationException::withMessages(['items'=>'Each product may appear only once on a purchase order.']);
             }
             $products=PosProduct::where('tenant_id',$tenant->id)
-                ->whereIn('id',$productIds)->where('is_active',true)->get()->keyBy('id');
+                ->whereIn('id',$productIds)->where('is_active',true)->where('track_stock',true)->get()->keyBy('id');
             if($products->count()!==count($productIds)){
                 throw ValidationException::withMessages(['items'=>'One or more products are unavailable.']);
             }
