@@ -101,8 +101,19 @@ class AuthController extends Controller
         if ($factor->required($user)) {
             $request->session()->regenerate();
             $request->session()->put('account_session_version', (int) $user->auth_session_version);
-        $request->session()->put('account_session_user_id', $user->id);
+            $request->session()->put('account_session_user_id', $user->id);
             $request->session()->forget(['platform_2fa_verified_user', 'platform_2fa_verified_at']);
+            try {
+                app(\\App\\Services\\EmailLoginCode::class)->send($user, $request->ip());
+            } catch (\\Throwable $e) {
+                report($e);
+                \\Illuminate\\Support\\Facades\\Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+                return redirect()->route('login')->withErrors([
+                    'email' => 'Could not send your verification code. Check the SMTP configuration and try signing in again.',
+                ]);
+            }
             return redirect()->to($factor->destination($request));
         }
 
