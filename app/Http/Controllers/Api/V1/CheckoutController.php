@@ -9,10 +9,10 @@ use Illuminate\Http\Request;
 
 class CheckoutController extends Controller
 {
-    public function store(Request $request,Tenant $tenant,PosCheckoutService $checkout)
+    public function store(Request $request,Tenant $tenant,PosCheckoutService $checkout,StoreDataController $dataController)
     {
         $sale=$checkout->checkout($request,$tenant);
-        $sale->load('items','payments');
-        return response()->json(['data'=>$sale,'message'=>'Sale completed.'],200);
+        // Keep the cashier's response free of internal unit-cost snapshots.
+        return $dataController->sale($request,$tenant,$sale);
     }
 }
