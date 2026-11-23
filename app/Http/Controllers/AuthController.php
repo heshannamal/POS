@@ -101,6 +101,7 @@ class AuthController extends Controller
         if ($factor->required($user)) {
             $request->session()->regenerate();
             $request->session()->put('account_session_version', (int) $user->auth_session_version);
+        $request->session()->put('account_session_user_id', $user->id);
             $request->session()->forget(['platform_2fa_verified_user', 'platform_2fa_verified_at']);
             return redirect()->to($factor->destination($request));
         }
@@ -115,6 +116,7 @@ class AuthController extends Controller
         ]);
         $request->session()->regenerate();
         $request->session()->put('account_session_version', (int) $user->auth_session_version);
+        $request->session()->put('account_session_user_id', $user->id);
 
         return redirect()->intended($this->homeFor($user));
     }
@@ -135,6 +137,7 @@ class AuthController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
         $request->session()->put('account_session_version', (int) $user->auth_session_version);
+        $request->session()->put('account_session_user_id', $user->id);
 
         return redirect()->route('verification.notice');
     }

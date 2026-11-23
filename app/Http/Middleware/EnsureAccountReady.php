@@ -12,8 +12,11 @@ class EnsureAccountReady
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
-        if ($user && (int) $request->session()->get('account_session_version', 0)
-            !== (int) $user->auth_session_version) {
+        $boundId = $request->session()->get('account_session_user_id');
+        if ($user && $request->session()->has('account_session_version')
+            && ($boundId === null || (int) $boundId === $user->id)
+            && (int) $request->session()->get('account_session_version')
+                !== (int) $user->auth_session_version) {
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();

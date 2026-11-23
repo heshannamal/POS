@@ -37,6 +37,7 @@ class PlatformTwoFactor
     {
         $request->session()->regenerate();
         $request->session()->put('account_session_version', (int) $request->user()->auth_session_version);
+        $request->session()->put('account_session_user_id', $request->user()->id);
         $request->session()->put('platform_2fa_verified_user', $request->user()->id);
         $request->session()->put('platform_2fa_verified_at', now()->timestamp);
     }
