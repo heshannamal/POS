@@ -108,7 +108,7 @@ class CommunicationCenter
         }
         if ($actor && $rule->to_actor) $recipients->push($actor);
         if ($rule->to_platform) {
-            $roles = config('communications.events.'.$event.'.platform_roles', []);
+            $roles = (config('communications.events', [])[$event]['platform_roles'] ?? []);
             $recipients = $recipients->merge(User::query()
                 ->where('is_platform_admin', true)
                 ->whereNull('temporary_admin_expires_at')

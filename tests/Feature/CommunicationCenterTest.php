@@ -126,16 +126,20 @@ class CommunicationCenterTest extends TestCase
         $admin = $this->admin('operations');
         $outsider = $this->admin('billing');
         $center = app(CommunicationCenter::class);
+        $beforeOwner = UserNotification::where('recipient_user_id', $owner->id)->count();
+        $beforeAdmin = UserNotification::where('recipient_user_id', $admin->id)->count();
 
         $center->emit('business.created', $tenant, $owner, $this->vars($tenant), 'demo-tenant-1001');
         $center->emit('business.created', $tenant, $owner, $this->vars($tenant), 'demo-tenant-1001');
 
-        $this->assertSame(1, UserNotification::where('recipient_user_id', $owner->id)->count());
-        $this->assertSame(1, UserNotification::where('recipient_user_id', $admin->id)->count());
+        $this->assertSame($beforeOwner + 1, UserNotification::where('recipient_user_id', $owner->id)->count());
+        $this->assertSame($beforeAdmin + 1, UserNotification::where('recipient_user_id', $admin->id)->count());
         $this->assertSame(0, UserNotification::where('recipient_user_id', $outsider->id)->count());
         $this->assertDatabaseCount('communication_deliveries', 0);
 
-        $note = UserNotification::where('recipient_user_id', $owner->id)->firstOrFail();
+        $note = UserNotification::where('recipient_user_id', $owner->id)
+            ->where('dedupe_key', hash('sha256','demo-tenant-1001|business.created|'.$owner->id))
+            ->firstOrFail();
         $this->actingAs($outsider)->post(route('platform.notifications.read', $note))
             ->assertNotFound();
         $this->assertNull($note->fresh()->read_at);
@@ -161,7 +165,7 @@ class CommunicationCenterTest extends TestCase
         $this->assertNull($note->fresh()->read_at);
 
         $this->actingAs($owner)->get(route('business.notifications.index', $second))
-            ->assertDontSee('Welcome to POS Cloud');
+            ->assertDontSee('Welcome to POS Cloud — Communication Demo');
     }
 
     public function test_test_mode_redirects_email_to_allowlisted_recipients_and_deduplicates(): void

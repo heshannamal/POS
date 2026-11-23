@@ -33,7 +33,7 @@
                     <div class="communication-notification-icon">{{ $notification->read_at?'✓':'✉' }}</div>
                     <div class="communication-notification-body">
                         <div class="message-meta"><strong>{{ $notification->title }}</strong><small>{{ $notification->created_at?->format('d M Y H:i') }}</small></div>
-                        <small class="muted">{{ config('communications.events.'.$notification->event_key.'.name',$notification->event_key) }}</small>
+                        <small class="muted">{{ (config('communications.events',[])[$notification->event_key]['name'] ?? $notification->event_key) }}</small>
                         <p>{{ $notification->message }}</p>
                         <div class="communication-inbox-actions">
                             @if($notification->action_url)<a class="btn btn-small btn-outline" href="{{ $notification->action_url }}">Open related page →</a>@endif

@@ -8,7 +8,7 @@
 </div>
 <div class="communication-rule-grid">
 @foreach($rules as $rule)
-    @php $definition=config('communications.events.'.$rule->event_key,[]); @endphp
+    @php $definition=config('communications.events',[])[$rule->event_key] ?? []; @endphp
     <section class="panel">
         <div class="panel-heading"><div><h2>{{ $definition['name'] ?? $rule->event_key }}</h2><p class="muted">{{ $rule->event_key }}</p></div></div>
         <form method="POST" action="{{ route('platform.communications.rules.update',$rule) }}" class="form-stack">
