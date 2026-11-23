@@ -137,4 +137,37 @@ class Phase9DeviceIntegrationTest extends TestCase
             ->assertRedirect();
         $this->assertDatabaseHas('pos_api_devices',['id'=>$device['id'],'is_active'=>false]);
     }
+    public function test_employee_cannot_access_unassigned_branch_or_open_shift_without_permission(): void
+    {
+        $f=$this->fixture();
+        $staff=User::factory()->create();
+        $f['tenant']->users()->attach($staff->id,['is_owner'=>false,'status'=>'active']);
+        $cashierRole=DB::table('roles')->where('tenant_id',$f['tenant']->id)
+            ->where('slug','cashier')->value('id');
+        DB::table('role_user')->insert([
+            'tenant_id'=>$f['tenant']->id,'role_id'=>$cashierRole,'user_id'=>$staff->id,
+        ]);
+        // Cashier role has pos.sales, but no branch assignment and no shift-operation permission.
+        $token=$this->deviceLogin($staff,$f['tenant'])['token'];
+        $uri='/api/v1/tenants/'.$f['tenant']->slug;
+        $this->withHeaders($this->headers($token))
+            ->getJson($uri.'/products?branch_id='.$f['branch']->id)->assertForbidden();
+        $this->withHeaders($this->headers($token))
+            ->postJson($uri.'/shifts',[
+                'register_id'=>$f['register'],'opening_cash'=>'0.00',
+            ])->assertForbidden();
+    }
+
+    public function test_platform_administrator_cannot_create_device_token(): void
+    {
+        $f=$this->fixture();
+        $admin=User::factory()->create(['is_platform_admin'=>true,'platform_role'=>'super_admin']);
+        $this->postJson('/api/v1/auth/device-login',[
+            'tenant_slug'=>$f['tenant']->slug,'email'=>$admin->email,'password'=>'password',
+            'device_uuid'=>(string)Str::uuid(),'device_name'=>'Admin device',
+            'platform'=>'desktop',
+        ])->assertUnprocessable();
+        $this->assertDatabaseMissing('pos_api_devices',['user_id'=>$admin->id]);
+    }
+
 }
