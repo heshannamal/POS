@@ -53,7 +53,7 @@ class Phase9ApiRoutesTest extends TestCase
             $route=Route::getRoutes()->getByName($name);
             $this->assertNotNull($route);
             $this->assertContains('tenant.member',$route->gatherMiddleware());
-            $this->assertContains('tenant.permission:settings.manage',$route->gatherMiddleware());
+            $this->assertContains('tenant.permission:pos.devices.manage',$route->gatherMiddleware());
         }
         $this->assertNotContains('GET',Route::getRoutes()->getByName('business.pos.devices.revoke')->methods());
     }
