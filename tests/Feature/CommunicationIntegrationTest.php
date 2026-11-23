@@ -88,6 +88,16 @@ class CommunicationIntegrationTest extends TestCase
         ]);
         $this->actingAs($admin)->get(route('platform.communications.templates.edit',$template))
             ->assertOk()->assertSee('Winter greeting');
+        $this->actingAs($admin)->put(route('platform.communications.templates.update',$template), [
+            'name' => 'Winter greeting revised',
+            'subject' => 'Hi {{user_name}}',
+            'body_markdown' => 'Updated template for {{user_email}}.',
+            'is_active' => '1',
+        ])->assertRedirect();
+        $this->assertContains('user_email', $template->fresh()->allowed_variables);
+        $this->actingAs($admin)->get(route('platform.communications.templates.edit',$template))
+            ->assertOk()->assertSee('Winter greeting revised');
+
 
         $this->actingAs($admin)->post(route('platform.communications.templates.preview'),[
             'event_key'=>'custom.winter_greeting',

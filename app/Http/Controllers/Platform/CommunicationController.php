@@ -100,7 +100,9 @@ class CommunicationController extends Controller
         DB::transaction(function () use ($request,$template,$data): void {
             $template->update([
                 ...$data,
-                'allowed_variables' => (config('communications.events', [])[$template->event_key]['variables'] ?? []),
+                'allowed_variables' => (config('communications.events', [])[$template->event_key]['variables']
+                    ?? (str_starts_with($template->event_key, 'custom.')
+                        ? config('communications.custom_variables', []) : [])),
                 'updated_by' => $request->user()->id,
             ]);
             AuditLog::create([
