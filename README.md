@@ -53,3 +53,7 @@ Requires incremental migrations and backup of private logos. No existing busines
 ## Global Stores & Tenant Staff
 
 See [Global Stores, tenant staff, device registry, login audit, session revocation, and Gmail SMTP setup](docs/GLOBAL-STORES-AND-USERS.md). Add private credentials only in your local `.env` file; the repository defaults to logged emails until configured.
+
+## Advanced Platform Security
+
+[Authenticator 2FA, recovery codes, revocable sessions, login alerts, and least-privilege roles](docs/ADVANCED-PLATFORM-SECURITY.md). The production policy requires 2FA for permanent Super Admins. Keep APP_KEY safe, as it encrypts TOTP secrets.
