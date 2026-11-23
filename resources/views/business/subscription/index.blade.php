@@ -3,7 +3,7 @@
 @section('header', 'Subscription & modules')
 @section('content')
 <div class="page-head">
-    <div><span class="overline">BUSINESS LICENSING</span><h1>Your subscription</h1><p class="muted">Review the current plan and modules. Online upgrades and billing are not enabled yet.</p></div>
+    <div><span class="overline">BUSINESS LICENSING</span><h1>Your subscription</h1><p class="muted">Review plan features, submit payment evidence, and access the latest billing records. Card checkout is not connected yet.</p></div>
 </div>
 <div class="dashboard-grid">
     <section class="panel">
@@ -16,7 +16,8 @@
         @if($tenant->status === 'trial')
             <p class="muted">{{ $tenant->trial?->days_remaining ?? 0 }} days remaining until {{ $tenant->trial?->ends_at?->format('d M Y') }}.</p>
         @endif
-        <p class="muted">This page does not collect payments. Contact platform support for manual plan changes until automated billing is released.</p>
+        <p class="muted">Card charges are not automated. Uploaded bank evidence requires independent platform verification before access changes.</p>
+        @if($canSubmit)<a class="btn btn-outline" style="margin-top:12px" href="{{ route('business.billing.index',$tenant) }}">Invoices & receipts →</a>@endif
     </section>
     <section class="panel panel-wide">
         <div class="panel-heading"><div><h2>Module access</h2><p class="muted">Access requires a released feature and an active plan or override.</p></div></div>
@@ -92,6 +93,9 @@
                         <option value="monthly" @selected(old('billing_cycle')==='monthly')>Monthly</option>
                         <option value="yearly" @selected(old('billing_cycle')==='yearly')>Yearly (only when plan offers annual pricing)</option>
                     </select>
+                    <label for="coupon_code">Discount code (optional)</label>
+                    <input name="coupon_code" id="coupon_code" maxlength="40" pattern="[A-Za-z0-9_-]+" value="{{ old('coupon_code') }}" placeholder="WELCOME10">
+                    <p class="muted">The final payable amount includes applicable plan discounts, coupon savings, and configured subscription tax. A coupon never activates a subscription without verification.</p>
                     <label for="customer_reference">Your bank transaction reference (optional)</label>
                     <input id="customer_reference" name="customer_reference" maxlength="120" value="{{ old('customer_reference') }}" placeholder="Receipt/transfer reference">
                     <label for="evidence">Attach bank transfer receipt or payment evidence *</label>
@@ -119,11 +123,12 @@
     </div>
     <div class="table-scroll">
         <table class="data-table">
-            <thead><tr><th>Reference</th><th>Plan</th><th>Cycle</th><th>Method</th><th>Requested</th><th>Verified</th><th>Status</th><th>Reviewed</th><th>Evidence</th></tr></thead>
+            <thead><tr><th>Reference</th><th>Invoice</th><th>Plan</th><th>Cycle</th><th>Method</th><th>Requested</th><th>Verified</th><th>Status</th><th>Reviewed</th><th>Evidence</th></tr></thead>
             <tbody>
             @forelse($payments as $payment)
                 <tr>
                     <td><strong>#{{ str_pad($payment->id,6,'0',STR_PAD_LEFT) }}</strong></td>
+                    <td>@if($canSubmit && $payment->billingInvoice)<a class="text-link" href="{{ route('business.billing.show',[$tenant,$payment->billingInvoice]) }}">{{ $payment->billingInvoice->number }}</a>@else — @endif</td>
                     <td>{{ $payment->plan?->name }}</td>
                     <td>{{ ucfirst($payment->billing_cycle) }}</td>
                     <td>{{ $payment->method === 'asset' ? 'Uploaded proof' : 'Card' }}</td>
@@ -135,7 +140,7 @@
                         <a class="text-link" href="{{ route('business.subscription.payments.receipt',[$tenant,$payment]) }}">Download</a>
                         @else — @endif</td>
                 </tr>
-            @empty <tr><td colspan="9" class="empty-row">No payment requests have been submitted.</td></tr>@endforelse
+            @empty <tr><td colspan="10" class="empty-row">No payment requests have been submitted.</td></tr>@endforelse
             </tbody>
         </table>
     </div>

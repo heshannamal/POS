@@ -17,6 +17,11 @@
             <div><dt>Billing period</dt><dd>{{ ucfirst($payment->billing_cycle) }}</dd></div>
             <div><dt>Payment method</dt><dd>{{ $payment->method === 'asset' ? 'Uploaded payment proof' : 'Card' }}</dd></div>
             <div><dt>Payable amount</dt><dd><strong>{{ $payment->currency }} {{ number_format($payment->requested_amount_minor/100, 2) }}</strong></dd></div>
+            @if($payment->billingInvoice)
+            <div><dt>Billing invoice</dt><dd><a class="text-link" href="{{ route('platform.billing.invoices.show',$payment->billingInvoice) }}">{{ $payment->billingInvoice->number }}</a>
+                · {{ $payment->billingInvoice->status }}
+            </dd></div>
+            @endif
             <div><dt>Customer reference</dt><dd>{{ $payment->customer_reference ?: 'Not provided' }}</dd></div>
             <div><dt>Uploaded evidence</dt><dd>
                 @if($payment->method === 'asset' && $payment->proof_path)

@@ -14,7 +14,7 @@ class SubscriptionRegistryController extends Controller
     {
         $query = Subscription::with(['tenant.trial', 'plan'])->latest();
         if ($status = $request->query('status')) {
-            if (in_array($status, ['trialing', 'active', 'paused', 'cancelled'], true)) {
+            if (in_array($status, ['trialing', 'active', 'paused', 'past_due', 'expired', 'cancelled'], true)) {
                 $query->where('status', $status);
             }
         }

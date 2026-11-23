@@ -26,7 +26,7 @@ class SubscriptionController extends Controller
             ->where('currency', $tenant->currency)->orderBy('monthly_price_minor')->get();
         $methods = PaymentMethod::orderBy('id')->get()->keyBy('code');
         $payments = SubscriptionPaymentRequest::where('tenant_id', $tenant->id)
-            ->with(['plan:id,name', 'reviewer:id,name'])->latest('id')->limit(15)->get();
+            ->with(['plan:id,name', 'reviewer:id,name', 'billingInvoice:id,payment_request_id,number,status'])->latest('id')->limit(15)->get();
         $canSubmit = app(\App\Services\TenantAuthorization::class)
             ->allows(auth()->user(), $tenant, 'settings.manage');
         $pendingPayment = $payments->firstWhere('status', 'pending');
