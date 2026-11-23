@@ -44,9 +44,10 @@
         ['label' => 'Settings', 'icon' => '⚙', 'route' => 'platform.settings.index', 'active' => 'platform.settings.*', 'access' => ['super_admin'], 'permanent' => true],
     ] : [
         ['label' => 'Dashboard', 'icon' => '◫', 'route' => 'business.dashboard', 'active' => 'business.dashboard'],
-        ['label' => 'POS', 'icon' => '▣', 'route' => null],
-        ['label' => 'Sales', 'icon' => '▤', 'route' => null],
-        ['label' => 'Products & Stock', 'icon' => '◇', 'route' => null],
+        ['label' => 'POS', 'icon' => '▣', 'route' => 'business.pos.terminal', 'active' => 'business.pos.terminal', 'can' => 'settings.manage'],
+        ['label' => 'Sales', 'icon' => '▤', 'route' => 'business.pos.sales', 'active' => 'business.pos.sales', 'can' => 'settings.manage'],
+        ['label' => 'Products & Stock', 'icon' => '◇', 'route' => 'business.pos.products', 'active' => 'business.pos.products*', 'can' => 'settings.manage'],
+        ['label' => 'Inventory', 'icon' => '▦', 'route' => 'business.pos.inventory', 'active' => 'business.pos.inventory*', 'can' => 'settings.manage'],
         ['label' => 'Employees', 'icon' => '♙', 'route' => 'business.employees.index', 'active' => 'business.employees.*', 'can' => 'employees.view', 'feature' => 'staff.core'],
         ['label' => 'Roles & Permissions', 'icon' => '⚿', 'route' => 'business.roles.index', 'active' => 'business.roles.*', 'can' => 'employees.view', 'feature' => 'staff.core'],
         ['label' => 'Subscription', 'icon' => '▥', 'route' => 'business.subscription.index', 'active' => 'business.subscription.*'],
