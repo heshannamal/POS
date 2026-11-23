@@ -14,7 +14,7 @@
 @php
     $platform = request()->routeIs('platform.*');
     $navItems = $platform ? [
-        ['label' => 'Overview', 'icon' => '◫', 'route' => 'platform.dashboard', 'active' => 'platform.dashboard'],
+        ['label' => 'Overview', 'icon' => '◫', 'route' => 'platform.dashboard', 'active' => 'platform.dashboard', 'access' => ['operations','billing','support','auditor']],
         ['label' => 'Businesses', 'icon' => '▦', 'route' => 'platform.tenants.index', 'active' => 'platform.tenants.*', 'access' => ['operations']],
         ['label' => 'All Stores', 'icon' => '▣', 'route' => 'platform.stores.index', 'active' => 'platform.stores.*', 'access' => ['operations','support']],
         ['label' => 'Tenant Staff', 'icon' => '♙', 'route' => 'platform.tenant-users.index', 'active' => 'platform.tenant-users.*', 'access' => ['operations','support']],

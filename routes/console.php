@@ -20,9 +20,9 @@ Artisan::command('platform:make-admin {email} {--name=Platform Administrator}', 
         return;
     }
 
-    $password = $this->secret('New admin password (min 12 characters, letters and numbers)');
+    $password = $this->secret('New admin password (policy minimum length, letters and numbers)');
     $check = Validator::make(['password' => $password], [
-        'password' => ['required', Password::min(12)->letters()->numbers()],
+        'password' => ['required', Password::min((int) config('platform_security.password_min_length', 12))->letters()->numbers()],
     ]);
 
     if ($check->fails()) {
@@ -41,6 +41,8 @@ Artisan::command('platform:make-admin {email} {--name=Platform Administrator}', 
     $user->email_verified_at ??= now();
     $user->is_platform_admin = true;
     $user->platform_role = 'super_admin';
+    $user->password_changed_at = now();
+    $user->auth_session_version = (int) $user->auth_session_version + 1;
     $user->save();
 
     $this->info('Platform administrator is ready: '.$email);
@@ -78,6 +80,7 @@ Artisan::command('platform:temporary-login {--hours=24}', function (): int {
         'platform_role' => 'super_admin',
         'email_verified_at' => now(),
         'temporary_admin_expires_at' => now()->addHours($hours),
+        'password_changed_at' => now(),
     ])->save();
 
     $this->newLine();

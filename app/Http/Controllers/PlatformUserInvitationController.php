@@ -31,7 +31,7 @@ class PlatformUserInvitationController extends Controller
     public function accept(Request $request, string $token): RedirectResponse
     {
         $data = $request->validate([
-            'password' => ['required', 'confirmed', Password::min(12)->letters()->numbers()],
+            'password' => ['required', 'confirmed', Password::min((int) config('platform_security.password_min_length', 12))->letters()->numbers()],
         ]);
 
         $user = DB::transaction(function () use ($token, $data, $request) {
@@ -45,7 +45,7 @@ class PlatformUserInvitationController extends Controller
                 'password' => $data['password'],
             ]);
             // Possession of a one-time random email invitation link is the email proof.
-            $user->forceFill(['email_verified_at' => now()])->save();
+            $user->forceFill(['email_verified_at' => now(), 'password_changed_at' => now()])->save();
             $invitation->update(['accepted_at' => now()]);
             AuditLog::create([
                 'actor_id' => $user->id, 'action' => 'platform.user.invitation.accepted',
@@ -57,6 +57,8 @@ class PlatformUserInvitationController extends Controller
 
         Auth::login($user);
         $request->session()->regenerate();
+        $request->session()->put('account_session_version', (int) $user->auth_session_version);
+        $request->session()->put('account_session_user_id', $user->id);
 
         return redirect()->route('onboarding.create')
             ->with('status', 'Welcome. Your account is verified. You can now create your business.');
