@@ -112,6 +112,22 @@ class StoreDataController extends Controller
     {
         abort_unless($sale->tenant_id===$tenant->id,404);
         app(PosBranchAccess::class)->ensure($request->user(),$tenant,(int)$sale->branch_id);
-        return response()->json(['data'=>$sale->load('items','payments')]);
+        $sale->load('items','payments');
+        return response()->json(['data'=>[
+            'id'=>$sale->id,'branch_id'=>$sale->branch_id,'shift_id'=>$sale->shift_id,
+            'cashier_id'=>$sale->cashier_id,'status'=>$sale->status,
+            'subtotal_minor'=>$sale->subtotal_minor,'discount_minor'=>$sale->discount_minor,
+            'total_minor'=>$sale->total_minor,'currency'=>$sale->currency,
+            'completed_at'=>$sale->completed_at?->toIso8601String(),
+            'items'=>$sale->items->map(fn($item)=>[
+                'id'=>$item->id,'product_id'=>$item->product_id,'name'=>$item->name,
+                'sku'=>$item->sku,'quantity'=>$item->quantity,
+                'unit_price_minor'=>$item->unit_price_minor,'line_total_minor'=>$item->line_total_minor,
+            ]),
+            'payments'=>$sale->payments->map(fn($payment)=>[
+                'method'=>$payment->method,'amount_minor'=>$payment->amount_minor,
+                'reference'=>$payment->reference,
+            ]),
+        ]]);
     }
 }
