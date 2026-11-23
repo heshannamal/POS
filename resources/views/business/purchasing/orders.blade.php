@@ -3,10 +3,12 @@
 @section('header','Purchase Orders')
 @section('content')
 <div class="page-head"><div><span class="overline">PHASE 8 · PURCHASING</span><h1>Purchase orders</h1><p class="muted">Draft purchase orders must be approved before goods can be received.</p></div><a class="btn btn-secondary" href="{{ route('business.purchasing.suppliers',$tenant) }}">Suppliers →</a></div>
+@if(app(\App\Services\TenantAuthorization::class)->allows(auth()->user(),$tenant,'pos.purchases.manage'))
 <section class="panel"><h2>Create purchase order</h2><form method="post" action="{{ route('business.purchasing.orders.store',$tenant) }}" id="purchase-create">@csrf
 <div class="form-grid"><label>Branch<select name="branch_id" class="form-control" required>@foreach($branches as $branch)<option value="{{ $branch->id }}">{{ $branch->name }}</option>@endforeach</select></label><label>Supplier<select name="supplier_id" class="form-control" required>@foreach($suppliers as $supplier)<option value="{{ $supplier->id }}">{{ $supplier->name }}</option>@endforeach</select></label><label>Expected delivery<input type="date" name="expected_date" class="form-control"></label><label>Discount in {{ $tenant->currency }} minor units<input name="discount_minor" type="number" min="0" value="0" class="form-control"></label></div>
 <div id="purchase-lines"></div><button type="button" class="btn btn-secondary" id="add-purchase-line">+ Add product</button>
 <label>Notes<textarea class="form-control" name="note"></textarea></label><button class="btn btn-primary">Save draft purchase order</button></form></section>
+@endif
 <section class="panel"><h2>Recent purchase orders</h2><div style="overflow-x:auto"><table class="data-table" style="width:100%"><thead><tr><th>#</th><th>Supplier</th><th>Branch</th><th>Status</th><th>Total</th><th>Received value</th><th>View</th></tr></thead><tbody>
 @forelse($orders as $order)<tr><td>#{{ $order->id }}</td><td>{{ $order->supplier_name }}</td><td>{{ $order->branch_name }}</td><td>{{ ucfirst($order->status) }}</td><td>{{ $order->currency }} {{ number_format($order->total_minor/100,2) }}</td><td>{{ number_format($order->received_minor/100,2) }}</td><td><a href="{{ route('business.purchasing.orders.show',[$tenant,$order->id]) }}">Details</a></td></tr>@empty<tr><td colspan="7">No purchase orders.</td></tr>@endforelse
 </tbody></table></div>{{ $orders->links() }}</section>
