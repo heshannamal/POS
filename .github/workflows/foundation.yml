@@ -28,6 +28,8 @@ jobs:
         run: find app routes database/migrations -name '*.php' -print0 | xargs -0 -n1 php -l > /dev/null
       - name: Compile Blade templates
         run: php artisan view:cache
+      - name: Verify Phase 9 API routes
+        run: vendor/bin/phpunit --no-progress --filter=Phase9ApiRoutesTest
       - name: Run feature tests
         run: vendor/bin/phpunit --no-progress --display-errors --display-warnings
       - uses: actions/setup-node@v4
