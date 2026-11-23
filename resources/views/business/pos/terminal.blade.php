@@ -21,8 +21,8 @@
 <div id="pos-cart-lines"><p class="muted">Your cart is empty.</p></div>
 <p><strong>Subtotal: {{ $tenant->currency }} <span id="pos-total">0.00</span></strong></p>
 <input type="hidden" name="discount_minor" value="0">
-<label>Payment method <select name="payment_method" class="form-control"><option value="cash">Cash</option><option value="bank_transfer">Verified bank transfer</option><option value="external_card">Verified external card</option></select></label>
-<label>External payment reference (required for non-cash) <input name="payment_reference" class="form-control" maxlength="120"></label>
+<label>Payment method <select name="payment_method" class="form-control"><option value="cash">Cash</option></select></label>
+<p class="muted">Cash-only in this foundation release. External payments require a verified integration.</p>
 <button class="btn btn-primary" type="submit" id="pos-pay" disabled>Complete sale</button></form></section>
 </div>
 <script>
