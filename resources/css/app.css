@@ -495,3 +495,29 @@ button[disabled] { cursor: not-allowed; opacity: .55; }
     .store-device-card { padding:12px; }
     .store-login-event { grid-template-columns:1fr; }
 }
+
+
+/* Advanced platform security — shares both light/dark design tokens */
+.security-secret { background:var(--panel-muted);border:1px solid var(--border);border-radius:16px;padding:18px;margin:18px 0;display:grid;gap:12px; }
+.security-secret small { color:var(--subtext);font-weight:700; }
+.security-secret code { font-size:19px;font-weight:800;letter-spacing:.12em;word-break:break-all;color:var(--text); }
+.security-uri {margin:0 0 18px;color:var(--subtext);}
+.security-break {display:block;white-space:normal;overflow-wrap:anywhere;margin-top:12px;padding:12px;background:var(--panel-muted);border-radius:10px;}
+.security-or{height:20px;display:flex;align-items:center;justify-content:center;color:var(--subtext);font-size:11px;font-weight:800;}
+.security-or:before,.security-or:after{content:"";height:1px;flex:1;background:var(--border);margin:0 12px;}
+.security-code-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0;}
+.security-code-grid code{padding:14px;display:block;text-align:center;background:var(--panel-muted);border:1px solid var(--border);border-radius:12px;letter-spacing:.12em;font-size:15px;font-weight:800;color:var(--text);}
+.security-session-list{display:grid;gap:12px;margin:20px 0;}
+.security-session-card{display:grid;gap:12px;border:1px solid var(--border);border-radius:15px;background:var(--panel-muted);padding:15px;}
+.security-session-card strong,.security-session-card small{display:block;overflow-wrap:anywhere;}
+.security-session-card small{color:var(--subtext);margin-top:6px;}
+.security-session-card form{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+.security-session-card form input{flex:1;min-width:150px;}
+.security-permission-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:4px 0 17px;}
+.security-permission-grid .check-line{display:flex;align-items:center;gap:9px;background:var(--panel-muted);padding:12px;border-radius:11px;margin:0;}
+.security-role-card{border:1px solid var(--border);border-radius:15px;padding:14px;margin-bottom:12px;}
+.security-role-card summary{display:flex;flex-wrap:wrap;gap:12px;align-items:center;cursor:pointer;}
+.security-role-card summary code{color:var(--subtext);}
+.security-alert-action{display:flex;flex-wrap:wrap;gap:7px;}
+.security-alert-action input{max-width:220px;}
+@media(max-width:700px){.security-permission-grid{grid-template-columns:1fr;}.security-code-grid{grid-template-columns:1fr 1fr;}.security-role-card summary{gap:6px;}}

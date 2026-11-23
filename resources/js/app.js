@@ -86,3 +86,22 @@ document.addEventListener('DOMContentLoaded', () => {
     [toggle, percentage, monthly, yearly].forEach((control) => control.addEventListener('input', update));
     update();
 });
+
+
+// Clipboard actions never send authenticator keys to third-party services.
+document.addEventListener('DOMContentLoaded', () => {
+    for (const attribute of ['data-copy-secret','data-copy-recovery']) {
+        document.querySelectorAll('[' + attribute + ']').forEach(button => {
+            button.addEventListener('click', async () => {
+                const value = button.getAttribute(attribute);
+                if (!value) return;
+                try {
+                    await navigator.clipboard.writeText(value);
+                    button.textContent = 'Copied';
+                } catch (_) {
+                    button.textContent = 'Select and copy manually';
+                }
+            });
+        });
+    }
+});

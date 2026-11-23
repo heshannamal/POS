@@ -18,7 +18,7 @@
                             <form method="POST" action="{{ route('platform.admins.update', $admin) }}" class="compact-form">
                                 @csrf @method('PATCH')
                                 <select name="role" aria-label="Role for {{ $admin->name }}">
-                                    @foreach($roles as $role)<option value="{{ $role }}" @selected($admin->platformRole() === $role)>{{ ucwords(str_replace('_',' ',$role)) }}</option>@endforeach
+                                    @foreach($roles as $role)<option value="{{ $role }}" @selected($admin->platformRole() === $role)>{{ str_starts_with($role,'custom_') ? ($customRoles->firstWhere('id',(int)substr($role,7))?->name ?? $role) : ucwords(str_replace('_',' ',$role)) }}</option>@endforeach
                                 </select>
                                 <select name="enabled" aria-label="Admin access for {{ $admin->name }}">
                                     <option value="1" selected>Keep active</option><option value="0">Revoke admin</option>
@@ -42,8 +42,9 @@
             <label for="admin_email">Verified account email</label>
             <input id="admin_email" type="email" name="email" maxlength="191" required placeholder="team@example.com" value="{{ old('email') }}">
             <label for="admin_role">Administrator role</label>
+            <p class="muted">Create least-privilege roles under <a href="{{ route('platform.security.roles.index') }}">Granular Roles</a>.</p>
             <select id="admin_role" name="role" required>
-                @foreach($roles as $role)<option value="{{ $role }}" @selected(old('role','operations') === $role)>{{ ucwords(str_replace('_',' ',$role)) }}</option>@endforeach
+                @foreach($roles as $role)<option value="{{ $role }}" @selected(old('role','operations') === $role)>{{ str_starts_with($role,'custom_') ? ($customRoles->firstWhere('id',(int)substr($role,7))?->name ?? $role) : ucwords(str_replace('_',' ',$role)) }}</option>@endforeach
             </select>
             <label for="admin_password">Confirm your password</label>
             <input type="password" id="admin_password" name="admin_password" autocomplete="current-password" required placeholder="Current admin password">
