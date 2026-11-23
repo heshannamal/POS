@@ -9,12 +9,7 @@ class PlatformTwoFactor
 {
     public function required(User $user): bool
     {
-        return $user->is_platform_admin && (
-            $user->two_factor_confirmed_at !== null
-            || ($user->isPermanentPlatformAdmin()
-                && $user->platformRole() === 'super_admin'
-                && config('platform_security.require_2fa', false))
-        );
+        return $user->is_platform_admin && (bool) config('platform_security.require_2fa', false);
     }
 
     public function enrolled(User $user): bool
