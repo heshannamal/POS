@@ -16,7 +16,7 @@ class EnsurePurchasingView
         abort_unless($tenant instanceof Tenant,404);
         $auth=app(TenantAuthorization::class);
         $allowed=false;
-        foreach(['pos.purchases.manage','pos.receiving.manage','pos.payables.manage'] as $permission) {
+        foreach(['pos.purchases.manage','pos.receiving.manage','pos.payables.manage','pos.purchasing.reports'] as $permission) {
             if($auth->allows($request->user(),$tenant,$permission)){
                 $allowed=true;break;
             }
