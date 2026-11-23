@@ -90,4 +90,15 @@ class PlatformTwoFactorTest extends TestCase
             'code' => app(Totp::class)->code($secret, time()),
         ])->assertRedirect(route('platform.dashboard'));
     }
+
+    public function test_pending_two_factor_enrollment_does_not_block_signing_out(): void
+    {
+        config(['platform_security.require_2fa' => true]);
+        $admin = $this->superAdmin();
+        $this->post(route('login'), [
+            'email' => $admin->email, 'password' => 'password',
+        ])->assertRedirect(route('security.setup'));
+        $this->post(route('logout'))->assertRedirect(route('home'));
+        $this->assertGuest();
+    }
 }

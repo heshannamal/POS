@@ -87,8 +87,10 @@ Route::middleware(['auth', 'verified', 'account.ready'])->prefix('security')->na
         ->middleware('throttle:5,1')->name('sessions.revoke');
 });
 
+// Signing out must work even while a 2FA challenge or forced reset is pending.
+Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
+
 Route::middleware(['auth', 'account.ready'])->group(function (): void {
-    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     Route::view('/email/verify', 'auth.verify-email')
         ->name('verification.notice');
