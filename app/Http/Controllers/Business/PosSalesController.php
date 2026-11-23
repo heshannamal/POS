@@ -53,12 +53,9 @@ class PosSalesController extends Controller
             'items.*.product_id'=>['required','integer',Rule::exists('pos_products','id')->where('tenant_id',$tenant->id)->whereNull('deleted_at')],
             'items.*.quantity'=>'required|integer|min:1|max:10000',
             'discount_minor'=>'nullable|integer|min:0',
-            'payment_method'=>['required',Rule::in(['cash','bank_transfer','external_card'])],
+            'payment_method'=>['required',Rule::in(['cash'])],
             'payment_reference'=>'nullable|string|max:120',
         ]);
-        if ($data['payment_method'] !== 'cash' && empty($data['payment_reference'])) {
-            throw ValidationException::withMessages(['payment_reference'=>'An independently verified external payment reference is required.']);
-        }
 
         $sale=DB::transaction(function ()use($data,$tenant,$request){
             // Lock tenant to serialize same-key checkouts and safeguard stock-row creation.
