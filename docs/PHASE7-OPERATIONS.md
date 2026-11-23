@@ -11,13 +11,14 @@
 - Granular staff role permission keys:
   - `pos.sales`: terminal, sales history, receipt
   - `pos.inventory.manage`: catalog, inventory
-  - `pos.register.manage`: register/shift creation, movements and close
+  - `pos.register.manage`: create and activate/deactivate register hardware entries
+  - `pos.shifts.operate`: open and close assigned shifts and record cash in/out
   - `pos.returns.manage`: approve and issue cash refunds
   - `pos.reports.view`: reports and financial CSV
 
 Staff access is also limited to the specific branches in the existing `branch_user` assignment table; owners can access their tenant's branches. The platform's Store Management screen handles staff branch assignments. Mutation routes require an active subscription/trial and are blocked for suspended or expired tenants (shift close remains available for reconciliation).
 
-Permissions are deliberately **not automatically granted to existing staff roles**. Business owners can assign them in Roles & Permissions. Cashiers must be assigned BOTH `pos.sales` and `pos.shifts.operate` to open their shift and sell. A manager allowed to issue returns must have `pos.returns.manage`, plus an own open shift for the sale's branch; user-owner can close/adjust another cashier's shift.
+Permissions are deliberately **not automatically granted to existing staff roles**. Business owners can assign them in Roles & Permissions. Cashiers must be assigned BOTH `pos.sales` and `pos.shifts.operate` to open their shift and sell. A manager allowed to issue returns must have `pos.returns.manage` and `pos.shifts.operate`, plus an own open shift for the sale's branch; user-owner can close/adjust another cashier's shift.
 
 ## Safe upgrade
 
@@ -32,7 +33,7 @@ npm run build
 php artisan test
 ```
 No destructive data migration and no migrate:fresh. Cashier mode begins with:
-1. Owner creates branch registers.
+1. Owner creates branch registers (owner sees every POS permission; delegated managers need both register-management and shift-operation permissions).
 2. Owner assigns POS role permissions to business employees and a platform operations administrator assigns each cashier to the relevant store through All Stores.
 3. Cashier opens a register shift and enters opening cash.
 4. Cashier selects that branch in the POS terminal and completes cash sales.
