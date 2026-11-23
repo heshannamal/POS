@@ -77,3 +77,7 @@ Initial [product catalog, branch inventory, cash sales terminal and receipts](do
 ## Phase 8 — Purchasing & Inventory (first release)
 
 [Supplier directory, purchase orders, GRNs, payment evidence, stock counts, reorder controls and purchasing reports](docs/PHASE8-PURCHASING.md) are implemented with tenant-specific data, branch assignments and granular role permissions. Apply additive migrations and run the feature/unit test suite on a backed-up local MySQL database. Advanced batch expiry, purchase tax, supplier returns, aging, and gateway reconciliations remain future work; the first release is not production-validated.
+
+## Phase 9 — Shared API v1
+
+A [versioned Laravel Sanctum device API](docs/PHASE9-SHARED-API.md) is provided for future POS desktop/mobile clients. It includes tenant-bound device tokens, revocation, assigned-store read endpoints, stock delta feeds, and **one shared checkout service** for web and API. No customer booking, offline sales, or full desktop/mobile application has been delivered by this phase. Local `composer update laravel/sanctum --with-all-dependencies`, migrations, tests, and deployment verification are still required before use.
