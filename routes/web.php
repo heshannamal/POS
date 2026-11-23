@@ -7,6 +7,12 @@ use App\Http\Controllers\Business\PosSalesController;
 use App\Http\Controllers\Business\PosRegisterController;
 use App\Http\Controllers\Business\PosReturnController;
 use App\Http\Controllers\Business\PosReportsController;
+use App\Http\Controllers\Business\PurchasingSupplierController;
+use App\Http\Controllers\Business\PurchasingOrderController;
+use App\Http\Controllers\Business\PurchasingReceivingController;
+use App\Http\Controllers\Business\PurchasingPaymentController;
+use App\Http\Controllers\Business\PurchasingStockController;
+use App\Http\Controllers\Business\PurchasingReportsController;
 
 use App\Http\Controllers\Security\TwoFactorController;
 use App\Http\Controllers\Security\SessionController;
@@ -168,6 +174,35 @@ Route::middleware(['auth', 'verified', 'account.ready'])->group(function (): voi
                 Route::get('/pos-reports', [PosReportsController::class, 'index'])->name('pos.reports');
                 Route::get('/pos-reports/csv', [PosReportsController::class, 'csv'])->name('pos.reports.csv');
             });
+            Route::middleware('tenant.permission:pos.suppliers.manage')->group(function (): void {
+                Route::get('/suppliers', [PurchasingSupplierController::class,'index'])->name('purchasing.suppliers');
+                Route::post('/suppliers', [PurchasingSupplierController::class,'store'])->middleware('pos.operational')->name('purchasing.suppliers.store');
+                Route::put('/suppliers/{supplier}', [PurchasingSupplierController::class,'update'])->middleware('pos.operational')->name('purchasing.suppliers.update');
+                Route::delete('/suppliers/{supplier}', [PurchasingSupplierController::class,'archive'])->middleware('pos.operational')->name('purchasing.suppliers.archive');
+            });
+            Route::middleware('tenant.permission:pos.purchases.manage')->group(function (): void {
+                Route::get('/purchase-orders', [PurchasingOrderController::class,'index'])->name('purchasing.orders');
+                Route::post('/purchase-orders', [PurchasingOrderController::class,'store'])->middleware(['pos.operational','throttle:30,1'])->name('purchasing.orders.store');
+                Route::get('/purchase-orders/{order}', [PurchasingOrderController::class,'show'])->name('purchasing.orders.show');
+                Route::post('/purchase-orders/{order}/approve', [PurchasingOrderController::class,'approve'])->middleware('pos.operational')->name('purchasing.orders.approve');
+                Route::post('/purchase-orders/{order}/cancel', [PurchasingOrderController::class,'cancel'])->middleware('pos.operational')->name('purchasing.orders.cancel');
+            });
+            Route::post('/purchase-orders/{order}/receive', [PurchasingReceivingController::class,'store'])
+                ->middleware(['tenant.permission:pos.receiving.manage','pos.operational','throttle:30,1'])->name('purchasing.receipts.store');
+            Route::post('/purchase-orders/{order}/payments', [PurchasingPaymentController::class,'store'])
+                ->middleware(['tenant.permission:pos.payables.manage','pos.operational','throttle:20,1'])->name('purchasing.payments.store');
+            Route::middleware('tenant.permission:pos.inventory.manage')->group(function (): void {
+                Route::get('/stock-controls', [PurchasingStockController::class,'index'])->name('purchasing.stock');
+                Route::post('/stock-controls/reorder', [PurchasingStockController::class,'reorder'])
+                    ->middleware('pos.operational')->name('purchasing.stock.reorder');
+                Route::post('/stock-controls/count', [PurchasingStockController::class,'count'])
+                    ->middleware('pos.operational')->name('purchasing.stock.count');
+            });
+            Route::middleware('tenant.permission:pos.purchasing.reports')->group(function (): void {
+                Route::get('/purchasing-reports', [PurchasingReportsController::class,'index'])->name('purchasing.reports');
+                Route::get('/purchasing-reports/csv', [PurchasingReportsController::class,'csv'])->name('purchasing.reports.csv');
+            });
+
             Route::get('/subscription', [BusinessSubscriptionController::class, 'index'])->name('subscription.index');
             Route::get('/billing', [BusinessBillingController::class, 'index'])
                 ->middleware('tenant.permission:settings.manage')->name('billing.index');
