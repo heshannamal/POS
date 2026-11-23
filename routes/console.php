@@ -94,3 +94,6 @@ Artisan::command('platform:temporary-login {--hours=24}', function (): int {
 
     return 0;
 })->purpose('Create a random, expiring super-admin login for local development only');
+
+// A cron job must run `php artisan schedule:run` every minute for reminders.
+\Illuminate\Support\Facades\Schedule::command('communications:send-reminders')->dailyAt('09:00')->withoutOverlapping();
