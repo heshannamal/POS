@@ -4,6 +4,9 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Business\PosCatalogController;
 use App\Http\Controllers\Business\PosInventoryController;
 use App\Http\Controllers\Business\PosSalesController;
+use App\Http\Controllers\Business\PosRegisterController;
+use App\Http\Controllers\Business\PosReturnController;
+use App\Http\Controllers\Business\PosReportsController;
 
 use App\Http\Controllers\Security\TwoFactorController;
 use App\Http\Controllers\Security\SessionController;
@@ -128,7 +131,7 @@ Route::middleware(['auth', 'verified', 'account.ready'])->group(function (): voi
         ->middleware('tenant.member')->group(function (): void {
             Route::get('/dashboard', [BusinessDashboardController::class, 'index'])->name('dashboard');
 
-            Route::middleware('tenant.permission:settings.manage')->group(function (): void {
+            Route::middleware('tenant.permission:pos.inventory.manage')->group(function (): void {
                 Route::get('/products', [PosCatalogController::class, 'index'])->name('pos.products');
                 Route::post('/products/categories', [PosCatalogController::class, 'category'])->name('pos.categories.store');
                 Route::post('/products', [PosCatalogController::class, 'store'])->name('pos.products.store');
@@ -137,13 +140,32 @@ Route::middleware(['auth', 'verified', 'account.ready'])->group(function (): voi
                 Route::get('/inventory', [PosInventoryController::class, 'index'])->name('pos.inventory');
                 Route::post('/inventory/adjust', [PosInventoryController::class, 'adjust'])->name('pos.inventory.adjust');
                 Route::post('/inventory/transfer', [PosInventoryController::class, 'transfer'])->name('pos.inventory.transfer');
+            });
+            Route::middleware('tenant.permission:pos.sales')->group(function (): void {
                 Route::get('/pos', [PosSalesController::class, 'terminal'])->name('pos.terminal');
                 Route::post('/pos/checkout', [PosSalesController::class, 'checkout'])
                     ->middleware('throttle:30,1')->name('pos.checkout');
                 Route::get('/sales', [PosSalesController::class, 'history'])->name('pos.sales');
                 Route::get('/sales/{sale}/receipt', [PosSalesController::class, 'receipt'])->name('pos.receipt');
             });
-
+            Route::middleware('tenant.permission:pos.register.manage')->group(function (): void {
+                Route::get('/registers', [PosRegisterController::class, 'index'])->name('pos.registers');
+                Route::post('/registers', [PosRegisterController::class, 'create'])->name('pos.registers.create');
+                Route::patch('/registers/{register}/status', [PosRegisterController::class, 'toggle'])->name('pos.registers.toggle');
+                Route::post('/registers/shifts', [PosRegisterController::class, 'open'])->name('pos.shifts.open');
+                Route::post('/registers/shifts/{shift}/movements', [PosRegisterController::class, 'movement'])->name('pos.shifts.movement');
+                Route::post('/registers/shifts/{shift}/close', [PosRegisterController::class, 'close'])->name('pos.shifts.close');
+            });
+            Route::middleware('tenant.permission:pos.returns.manage')->group(function (): void {
+                Route::get('/returns', [PosReturnController::class, 'index'])->name('pos.returns');
+                Route::get('/sales/{sale}/return', [PosReturnController::class, 'create'])->name('pos.returns.create');
+                Route::post('/sales/{sale}/return', [PosReturnController::class, 'store'])
+                    ->middleware('throttle:20,1')->name('pos.returns.store');
+            });
+            Route::middleware('tenant.permission:pos.reports.view')->group(function (): void {
+                Route::get('/pos-reports', [PosReportsController::class, 'index'])->name('pos.reports');
+                Route::get('/pos-reports/csv', [PosReportsController::class, 'csv'])->name('pos.reports.csv');
+            });
             Route::get('/subscription', [BusinessSubscriptionController::class, 'index'])->name('subscription.index');
             Route::get('/billing', [BusinessBillingController::class, 'index'])
                 ->middleware('tenant.permission:settings.manage')->name('billing.index');
