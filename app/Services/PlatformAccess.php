@@ -32,6 +32,7 @@ class PlatformAccess
         'audit.export' => 'Export audit CSV',
         'support.view' => 'View tickets and announcements',
         'support.manage' => 'Respond to tickets and manage announcements',
+        'notifications.view' => 'View own notifications',
         'security.view' => 'View security dashboards',
     ];
 
@@ -91,6 +92,7 @@ class PlatformAccess
         if (str_starts_with($name, 'platform.support.') || str_starts_with($name, 'platform.announcements.')) {
             return $view ? 'support.view' : 'support.manage';
         }
+        if (str_starts_with($name, 'platform.notifications.')) return 'notifications.view';
         if (str_starts_with($name, 'platform.security.')) return 'security.view';
 
         // Admin roles, payment-settings mutations and permanent-only financial
@@ -118,6 +120,7 @@ class PlatformAccess
             'audit' => 'audit.view',
             'support', 'announcements' => 'support.view',
             'security' => 'security.view',
+            'notifications' => 'notifications.view',
             default => null,
         };
         return $permission !== null && in_array($permission, $role->permissions ?? [], true);

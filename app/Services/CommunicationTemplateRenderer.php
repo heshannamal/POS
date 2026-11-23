@@ -18,12 +18,11 @@ class CommunicationTemplateRenderer
     {
         // Markdown strips inline HTML and unsafe URLs before substitution.
         // Variables are replaced *after* markdown parsing with HTML entities.
-        $html = Str::markdown($template->body_markdown, [
+        $source = $this->replace($template->body_markdown, $variables, $preview, true);
+        return Str::markdown($source, [
             'html_input' => 'strip',
             'allow_unsafe_links' => false,
         ]);
-
-        return $this->replace($html, $variables, $preview, true);
     }
 
     private function replace(string $text, array $variables, bool $preview, bool $escape): string

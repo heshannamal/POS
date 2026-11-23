@@ -31,7 +31,6 @@ class CommunicationCenter
             'support.customer.replied' => 'support.opened',
             'support.ticket.replied' => 'support.replied',
             'employee.invited' => 'staff.invited',
-            'tenant.trial.extended' => 'trial.ending',
         ];
         $event = $map[$audit->action] ?? null;
         if (! $event || ! $audit->tenant_id) return;
@@ -113,7 +112,8 @@ class CommunicationCenter
             $recipients = $recipients->merge(User::query()
                 ->where('is_platform_admin', true)
                 ->whereNull('temporary_admin_expires_at')
-                ->where(fn ($q) => $q->where('platform_role', 'super_admin')
+                ->where(fn ($q) => $q->whereNull('platform_role')
+                    ->orWhere('platform_role', 'super_admin')
                     ->orWhereIn('platform_role', $roles))->get());
         }
 

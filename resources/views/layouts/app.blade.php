@@ -32,6 +32,11 @@
         ['label' => 'Security Center', 'icon' => '⚿', 'route' => 'platform.security.index', 'active' => 'platform.security.*', 'access' => ['auditor']],
         ['label' => 'Granular Roles', 'icon' => '♧', 'route' => 'platform.security.roles.index', 'active' => 'platform.security.roles.*', 'access' => ['super_admin'], 'permanent' => true],
         ['label' => 'Administrators', 'icon' => '♙', 'route' => 'platform.admins.index', 'active' => 'platform.admins.*', 'access' => ['super_admin'], 'permanent' => true],
+        ['label' => 'Email Templates', 'icon' => '✉', 'route' => 'platform.communications.templates.index', 'active' => 'platform.communications.templates.*', 'access' => ['super_admin'], 'permanent' => true],
+        ['label' => 'Recipients', 'icon' => '♙', 'route' => 'platform.communications.rules.index', 'active' => 'platform.communications.rules.*', 'access' => ['super_admin'], 'permanent' => true],
+        ['label' => 'Email Settings', 'icon' => '⚙', 'route' => 'platform.communications.settings.index', 'active' => 'platform.communications.settings.*', 'access' => ['super_admin'], 'permanent' => true],
+        ['label' => 'Delivery Logs', 'icon' => '▨', 'route' => 'platform.communications.deliveries.index', 'active' => 'platform.communications.deliveries.*', 'access' => ['super_admin'], 'permanent' => true],
+        ['label' => 'Notification Inbox', 'icon' => '◉', 'route' => 'platform.notifications.index', 'active' => 'platform.notifications.*', 'access' => ['operations','support','billing','auditor']],
         ['label' => 'Settings', 'icon' => '⚙', 'route' => 'platform.settings.index', 'active' => 'platform.settings.*', 'access' => ['super_admin'], 'permanent' => true],
     ] : [
         ['label' => 'Dashboard', 'icon' => '◫', 'route' => 'business.dashboard', 'active' => 'business.dashboard'],
@@ -42,6 +47,7 @@
         ['label' => 'Roles & Permissions', 'icon' => '⚿', 'route' => 'business.roles.index', 'active' => 'business.roles.*', 'can' => 'employees.view', 'feature' => 'staff.core'],
         ['label' => 'Subscription', 'icon' => '▥', 'route' => 'business.subscription.index', 'active' => 'business.subscription.*'],
         ['label' => 'Support', 'icon' => '✉', 'route' => 'business.support.index', 'active' => 'business.support.*', 'can' => 'settings.manage'],
+        ['label' => 'Notifications', 'icon' => '◉', 'route' => 'business.notifications.index', 'active' => 'business.notifications.*'],
         ['label' => 'Reports', 'icon' => '▨', 'route' => null],
     ];
 @endphp
@@ -114,6 +120,14 @@
                         @if($pendingPaymentReviews > 0)<span class="pending-review-count">{{ $pendingPaymentReviews > 99 ? '99+' : $pendingPaymentReviews }}</span>@endif
                     </a>
                 @endif
+                @php
+                    $unreadNotifications = \App\Models\UserNotification::where('recipient_user_id', auth()->id())
+                        ->whereNull('read_at')->when(!$platform && isset($tenant), fn ($q) => $q->where('tenant_id',$tenant->id))->count();
+                    $notificationHref = $platform ? route('platform.notifications.index') : route('business.notifications.index',$tenant);
+                @endphp
+                <a class="topbar-review-link" href="{{ $notificationHref }}" title="Notification inbox" aria-label="{{ $unreadNotifications }} unread notifications">♧
+                    @if($unreadNotifications>0)<span class="pending-review-count">{{ $unreadNotifications>99?'99+':$unreadNotifications }}</span>@endif
+                </a>
                 <a class="topbar-review-link" href="{{ route('security.sessions') }}" title="My sessions & security" aria-label="My security sessions">⚿</a>
                 <span class="topbar-user">{{ auth()->user()->name }}</span>
                 <button type="button" class="icon-button js-theme-toggle" aria-label="Toggle dark mode"><span class="theme-symbol">☾</span></button>

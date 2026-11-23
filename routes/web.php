@@ -15,6 +15,8 @@ use App\Http\Controllers\Platform\PlanController;
 use App\Http\Controllers\Platform\ModuleController;
 use App\Http\Controllers\Platform\AdminTeamController;
 use App\Http\Controllers\Platform\SettingsController;
+use App\Http\Controllers\Platform\CommunicationController;
+use App\Http\Controllers\NotificationInboxController;
 use App\Http\Controllers\Platform\BusinessOperationsController;
 use App\Http\Controllers\Platform\TenantNotesController;
 use App\Http\Controllers\Platform\TenantOnboardingController;
@@ -124,6 +126,14 @@ Route::middleware(['auth', 'verified', 'account.ready'])->group(function (): voi
             Route::get('/dashboard', [BusinessDashboardController::class, 'index'])->name('dashboard');
             Route::get('/subscription', [BusinessSubscriptionController::class, 'index'])->name('subscription.index');
             Route::get('/logo', [TenantLogoController::class, 'show'])->name('logo.show');
+            Route::get('/notifications', [NotificationInboxController::class, 'business'])
+                ->name('notifications.index');
+            Route::post('/notifications/{notification}/read', [NotificationInboxController::class, 'markBusiness'])
+                ->name('notifications.read');
+            Route::post('/notifications/read-all', [NotificationInboxController::class, 'markAllBusiness'])
+                ->name('notifications.read-all');
+            Route::put('/notifications/preferences', [NotificationInboxController::class, 'preferencesBusiness'])
+                ->name('notifications.preferences');
             Route::post('/subscription/payments', [BusinessPaymentController::class, 'store'])
                 ->middleware(['tenant.permission:settings.manage', 'throttle:5,1'])->name('subscription.payments.store');
             Route::get('/subscription/payments/{payment}/evidence', [BusinessPaymentController::class, 'receipt'])
@@ -155,6 +165,10 @@ Route::middleware(['auth', 'verified', 'account.ready'])->group(function (): voi
     Route::prefix('platform')->name('platform.')
         ->middleware('platform.admin')->group(function (): void {
             Route::get('/dashboard', [PlatformDashboard::class, 'index'])->name('dashboard');
+            Route::get('/notifications', [NotificationInboxController::class, 'platform'])->name('notifications.index');
+            Route::post('/notifications/read-all', [NotificationInboxController::class, 'markAllPlatform'])->name('notifications.read-all');
+            Route::post('/notifications/{notification}/read', [NotificationInboxController::class, 'markPlatform'])->name('notifications.read');
+            Route::put('/notifications/preferences', [NotificationInboxController::class, 'preferencesPlatform'])->name('notifications.preferences');
             Route::get('/security', [SecurityDashboardController::class, 'index'])
                 ->middleware('platform.role:auditor')->name('security.index');
 
@@ -300,6 +314,22 @@ Route::middleware(['auth', 'verified', 'account.ready'])->group(function (): voi
                     ->middleware('throttle:5,1')->name('admins.store');
                 Route::patch('/administrators/{administrator}', [AdminTeamController::class, 'update'])
                     ->middleware('throttle:5,1')->name('admins.update');
+                Route::get('/communications/templates', [CommunicationController::class, 'templates'])->name('communications.templates.index');
+                Route::get('/communications/templates/{template}/edit', [CommunicationController::class, 'edit'])->name('communications.templates.edit');
+                Route::put('/communications/templates/{template}', [CommunicationController::class, 'update'])->name('communications.templates.update');
+                Route::post('/communications/templates/preview', [CommunicationController::class, 'preview'])
+                    ->name('communications.templates.preview');
+                Route::get('/communications/recipients', [CommunicationController::class, 'rules'])->name('communications.rules.index');
+                Route::put('/communications/recipients/{rule}', [CommunicationController::class, 'updateRule'])
+                    ->name('communications.rules.update');
+                Route::get('/communications/settings', [CommunicationController::class, 'settings'])->name('communications.settings.index');
+                Route::put('/communications/settings', [CommunicationController::class, 'updateSettings'])
+                    ->name('communications.settings.update');
+                Route::post('/communications/test', [CommunicationController::class, 'test'])
+                    ->middleware('throttle:5,1')->name('communications.test');
+                Route::get('/communications/deliveries', [CommunicationController::class, 'deliveries'])->name('communications.deliveries.index');
+                Route::post('/communications/deliveries/{delivery}/retry', [CommunicationController::class, 'retry'])
+                    ->middleware('throttle:5,1')->name('communications.deliveries.retry');
                 Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
                 Route::put('/settings', [SettingsController::class, 'update'])->name('settings.update');
                 Route::put('/payment-setup/methods/{method}', [PaymentSettingsController::class, 'update'])
