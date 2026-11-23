@@ -9,15 +9,15 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Models\UserNotification;
 use App\Services\CreateTenant;
-use Illuminate\Foundation\Testing\DatabaseTruncation;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class CommunicationIntegrationTest extends TestCase
 {
-    // Avoid rollback of legacy SQLite indexed columns; test true commits.
-    use DatabaseTruncation;
+    // Match the project's existing transactional test setup.
+    use RefreshDatabase;
 
-    public function test_tenant_provisioning_creates_post_commit_notifications_with_email_off(): void
+    public function test_tenant_notification_event_service_creates_scoped_inbox_with_email_off(): void
     {
         $owner = User::factory()->create();
         $platformAdmin = User::factory()->create([
@@ -28,6 +28,11 @@ class CommunicationIntegrationTest extends TestCase
         $this->assertDatabaseHas('audit_logs', [
             'tenant_id' => $tenant->id, 'action' => 'tenant.created',
         ]);
+        $audit = AuditLog::where('tenant_id', $tenant->id)
+            ->where('action', 'tenant.created')->firstOrFail();
+        app(\App\Services\CommunicationCenter::class)->eventFromAudit($audit);
+        app(\App\Services\CommunicationCenter::class)->eventFromAudit($audit);
+
         $this->assertDatabaseHas('user_notifications', [
             'recipient_user_id' => $owner->id, 'tenant_id' => $tenant->id,
             'event_key' => 'business.created',
@@ -39,7 +44,7 @@ class CommunicationIntegrationTest extends TestCase
         $this->assertDatabaseCount('communication_deliveries',0);
     }
 
-    public function test_security_alert_after_commit_notifies_platform_admin(): void
+    public function test_security_alert_service_notifies_platform_admin(): void
     {
         $admin = User::factory()->create([
             'is_platform_admin' => true, 'platform_role' => 'super_admin',
@@ -49,6 +54,8 @@ class CommunicationIntegrationTest extends TestCase
             'type' => 'repeated_login_failures',
             'ip_address' => '192.0.2.7',
         ]);
+        app(\App\Services\CommunicationCenter::class)->securityAlert($alert);
+
 
         $this->assertDatabaseHas('user_notifications', [
             'recipient_user_id'=>$admin->id,
