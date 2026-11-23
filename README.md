@@ -61,3 +61,7 @@ See [Global Stores, tenant staff, device registry, login audit, session revocati
 ## Phase 5 — Communication Center
 
 See [Phase 5 Communication Center](docs/PHASE5-COMMUNICATION-CENTER.md) for editable event templates, recipient rules, encrypted delivery logs, test-mode SMTP safeguards, notification inbox, queue worker and scheduled reminders. Outbound email is disabled until enabled by the platform administrator.
+
+## Phase 6 — Advanced Subscription Billing
+
+[Invoices, verified receipts, coupons, tax defaults, externally reconciled refunds/credit notes, renewal controls and financial reports](docs/PHASE6-ADVANCED-BILLING.md). Payment activation still requires independent administrator approval; card checkout and automatic charging remain disconnected.
