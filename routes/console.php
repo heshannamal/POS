@@ -100,3 +100,6 @@ Artisan::command('platform:temporary-login {--hours=24}', function (): int {
 
 // Safe: no automatic card/bank charging. Keeps ended paid periods correctly classified.
 \Illuminate\Support\Facades\Schedule::command('billing:maintain')->dailyAt('00:15')->withoutOverlapping();
+
+// Notify platform billing reviewers only; never request duplicate customer bank transfers.
+\Illuminate\Support\Facades\Schedule::command('billing:remind-invoices')->dailyAt('09:15')->withoutOverlapping();

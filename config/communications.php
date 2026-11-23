@@ -10,6 +10,11 @@ return [
             'variables' => ['platform_name','business_name','owner_name','owner_email','business_url'],
             'to_owner' => true, 'to_platform' => true, 'platform_roles' => ['super_admin','operations'],
         ],
+        'billing.review_overdue' => [
+            'name' => 'Payment review awaiting attention',
+            'variables' => ['platform_name','business_name','invoice_number','invoice_amount','currency','invoice_url'],
+            'to_platform'=>true, 'platform_roles'=>['super_admin','billing'],
+        ],
         'billing.invoice_issued' => [
             'name' => 'Subscription invoice issued',
             'variables' => ['platform_name','business_name','invoice_number','invoice_amount','currency','invoice_url'],

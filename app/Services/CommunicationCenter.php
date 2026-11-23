@@ -206,7 +206,7 @@ class CommunicationCenter
     private function actionUrl(string $event, ?Tenant $tenant, array $vars): ?string
     {
         return match ($event) {
-            'billing.invoice_issued','billing.refund_recorded' => $vars['invoice_url'] ?? null,
+            'billing.invoice_issued','billing.refund_recorded','billing.review_overdue' => $vars['invoice_url'] ?? null,
             'payment.submitted', 'payment.approved', 'payment.rejected' => $vars['payment_url'] ?? null,
             'support.opened', 'support.replied', 'support.customer_replied' => $vars['ticket_url'] ?? null,
             'security.alert' => route('platform.security.index'),
