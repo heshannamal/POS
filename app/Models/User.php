@@ -16,7 +16,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     protected $fillable = ['name', 'email', 'password'];
 
-    protected $hidden = ['password', 'remember_token'];
+    protected $hidden = ['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes'];
 
     protected function casts(): array
     {
@@ -30,7 +30,16 @@ class User extends Authenticatable implements MustVerifyEmail
             'force_password_reset_at' => 'datetime',
             'auth_revoked_at' => 'datetime',
             'auth_session_version' => 'integer',
+            'two_factor_secret' => 'encrypted',
+            'two_factor_recovery_codes' => 'encrypted:array',
+            'two_factor_confirmed_at' => 'datetime',
+            'password_changed_at' => 'datetime',
         ];
+    }
+
+    public function securitySessions(): HasMany
+    {
+        return $this->hasMany(UserSecuritySession::class);
     }
 
     public function platformRole(): ?string
