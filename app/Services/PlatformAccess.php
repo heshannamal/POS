@@ -71,7 +71,9 @@ class PlatformAccess
     public function routePermission(Request $request): ?string
     {
         $name = (string) $request->route()?->getName();
-        $view = in_array($request->method(), ['GET', 'HEAD'], true);
+        $view = in_array($request->method(), ['GET', 'HEAD'], true)
+            && ! str_ends_with($name, '.create')
+            && ! str_ends_with($name, '.edit');
 
         if ($name === 'platform.dashboard') return 'dashboard.view';
         if (str_starts_with($name, 'platform.tenants.')) return $view ? 'tenants.view' : 'tenants.manage';
