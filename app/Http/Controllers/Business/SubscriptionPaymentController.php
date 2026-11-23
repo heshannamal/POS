@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Business;
 
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
+use App\Services\BillingInvoicing;
 use App\Models\PaymentMethod;
 use App\Models\Plan;
 use App\Models\SubscriptionPaymentRequest;
@@ -24,6 +25,7 @@ class SubscriptionPaymentController extends Controller
             'plan_id' => ['required', 'integer', 'exists:plans,id'],
             'billing_cycle' => ['required', Rule::in(['monthly', 'yearly'])],
             'customer_reference' => ['nullable', 'string', 'max:120'],
+            'coupon_code' => ['nullable', 'string', 'max:40', 'regex:/^[A-Za-z0-9_-]+$/'],
             'evidence' => ['required', 'file', 'mimes:jpeg,jpg,png,pdf', 'max:5120'],
         ]);
 
@@ -57,7 +59,7 @@ class SubscriptionPaymentController extends Controller
         }
 
         try {
-            $record = DB::transaction(function () use ($tenant, $plan, $data, $path, $amount, $request) {
+            $record = DB::transaction(function () use ($tenant, $plan, $data, $path, $request) {
                 Tenant::whereKey($tenant->id)->lockForUpdate()->firstOrFail();
                 if (SubscriptionPaymentRequest::where('tenant_id', $tenant->id)
                     ->where('status', 'pending')->exists()) {
@@ -66,6 +68,10 @@ class SubscriptionPaymentController extends Controller
                     ]);
                 }
 
+                $quote = app(BillingInvoicing::class)->quote(
+                    $tenant, $plan, $data['billing_cycle'], $data['coupon_code'] ?? null
+                );
+
                 $payment = SubscriptionPaymentRequest::create([
                     'tenant_id' => $tenant->id,
                     'plan_id' => $plan->id,
@@ -73,12 +79,14 @@ class SubscriptionPaymentController extends Controller
                     'submitted_by' => $request->user()->id,
                     'method' => 'asset',
                     'billing_cycle' => $data['billing_cycle'],
-                    'requested_amount_minor' => $amount,
+                    'requested_amount_minor' => $quote['total_minor'],
                     'currency' => $plan->currency,
                     'status' => 'pending',
                     'proof_path' => $path,
                     'customer_reference' => $data['customer_reference'] ?? null,
                 ]);
+
+                $invoice = app(BillingInvoicing::class)->createForSubmission($tenant, $payment, $plan, $quote);
 
                 AuditLog::create([
                     'tenant_id' => $tenant->id, 'actor_id' => $request->user()->id,
@@ -88,7 +96,9 @@ class SubscriptionPaymentController extends Controller
                     'metadata' => [
                         'method' => 'asset', 'plan_id' => $plan->id,
                         'billing_cycle' => $data['billing_cycle'],
-                        'requested_amount_minor' => $amount, 'currency' => $plan->currency,
+                        'requested_amount_minor' => $quote['total_minor'], 'currency' => $plan->currency,
+                        'invoice_number' => $invoice->number,
+                        'coupon_code' => $invoice->coupon_code, 'tax_minor' => $quote['tax_minor'],
                         'discount_percentage' => $plan->discountIsActive() ? $plan->discount_percentage : null,
                     ],
                     'ip_address' => $request->ip(),

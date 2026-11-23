@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class SubscriptionPaymentRequest extends Model
 {
@@ -23,6 +24,11 @@ class SubscriptionPaymentRequest extends Model
             'provider_verified_at' => 'datetime',
             'reviewed_at' => 'datetime',
         ];
+    }
+
+    public function billingInvoice(): HasOne
+    {
+        return $this->hasOne(BillingInvoice::class, 'payment_request_id');
     }
 
     public function tenant(): BelongsTo

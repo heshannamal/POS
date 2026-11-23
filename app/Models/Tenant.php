@@ -75,6 +75,11 @@ class Tenant extends Model
         return $this->hasOne(Subscription::class);
     }
 
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(BillingInvoice::class);
+    }
+
     public function paymentRequests(): HasMany
     {
         return $this->hasMany(SubscriptionPaymentRequest::class);

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\AuditLog;
+use App\Services\BillingInvoicing;
 use App\Models\Subscription;
 use App\Models\SubscriptionPaymentRequest;
 use App\Models\Tenant;
@@ -84,7 +85,10 @@ class SubscriptionPaymentApproval
                 'started_at' => $renewingSamePlan && $subscription->started_at
                     ? $subscription->started_at : now(),
                 'ends_at' => $end,
+                'billing_cycle' => $payment->billing_cycle,
             ]);
+
+            app(BillingInvoicing::class)->paid($payment, $tenant, $periodStart, $end);
 
             $tenant->update(['status' => 'active']);
             if ($before === 'trial' && $tenant->trial && $tenant->trial->converted_at === null) {
@@ -127,6 +131,7 @@ class SubscriptionPaymentApproval
                 'status' => 'rejected', 'reviewed_by' => $operator->id,
                 'reviewed_at' => now(), 'review_notes' => $reason,
             ]);
+            app(BillingInvoicing::class)->rejected($payment);
             AuditLog::create([
                 'tenant_id' => $payment->tenant_id, 'actor_id' => $operator->id,
                 'action' => 'subscription.payment.rejected',
