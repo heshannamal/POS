@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class PosSale extends Model
 {
-    protected $fillable = ['tenant_id','branch_id','shift_id','cashier_id','idempotency_key','status','subtotal_minor','discount_minor','total_minor','currency','completed_at'];
+    protected $fillable = ['tenant_id','branch_id','shift_id','cashier_id','idempotency_key','request_hash','status','subtotal_minor','discount_minor','total_minor','currency','completed_at'];
 
     protected function casts(): array
     {
