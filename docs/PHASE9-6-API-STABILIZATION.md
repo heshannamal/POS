@@ -23,9 +23,16 @@
 
 ## CI and rollout
 
-The focused Phase 9 route tests and device workflow tests have passed on GitHub Actions runs during development. MySQL 8.4 migrations, PHP syntax lint and Blade compilation also passed on those runs. Verify the **latest commit** CI before rollout.
+CI run [45248289909](https://github.com/heshannamal/POS/actions/runs/45248289909) on commit `435bbedd` completed successfully:
+- Focused API route tests: **4 passed / 71 assertions**
+- Phase 9 device integration tests: **7 passed / 37 assertions**
+- Full suite: **135 passed / 1,211 assertions**
+- MySQL 8.4 migrations: **passed**
+- PHP syntax lint, Blade cache and frontend build: **passed**
 
-The existing broad suite still fails, including legacy authenticator-app/TOTP scenarios that contradict the current administrator email-code flow, plus billing and administration assumptions. These require careful modernization and integration diagnosis. They have **not** been deleted or bypassed.
+This verifies code and migrations in CI, not deployment readiness on the user's server or real hardware.
+
+The previous suite failures were traced to a testing environment setting that enabled administrator email verification unexpectedly, plus three outdated TOTP tests. `phpunit.xml` now explicitly disables required administrator email verification **only for general tests**, and the former TOTP workflow tests have been replaced with current six-digit email-code tests that explicitly enable verification. Production default security is unchanged, and the tests were not disabled.
 
 Safe commands for a backed-up local development database:
 
