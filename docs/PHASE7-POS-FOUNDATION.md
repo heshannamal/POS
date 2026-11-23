@@ -9,7 +9,7 @@ The first implementation slice adds tenant-scoped category and product CRUD, bar
 - Sales submitted under the same UUID do not duplicate a purchase.
 - Stock updates and sales operate in DB transactions with row locking.
 - A sale snapshots product name, SKU and unit price for historical integrity.
-- Manual external card and bank options require a verified reference: these do **not** initiate a gateway payment.
+- Retail checkout accepts cash only until bank/card reconciliation and verification are implemented. No gateway payment is initiated.
 - Existing SaaS subscription billing is separate from retail sales.
 
 ## Deploy
