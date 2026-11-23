@@ -83,8 +83,10 @@ Content-Type: application/json
 ## Critical boundaries
 
 - The API currently supports **online** desktop/mobile operations. Stock sync is a feed for future sync design, not a complete offline synchronization engine. Do not accept offline cash sales until server-side reservation/conflict resolution is designed and tested.
-- The client **must** open its shift from the existing web register UI for this first release. Add shared shift services and desktop shift open/close endpoints next.
-- Returns, purchase orders, customer booking, push notifications, platform administration, multi-tender payment, and per-device remote management UI are not implemented as API write endpoints yet.
+- **Phase 9.6 update:** Desktop clients can now open/operate/close their own shifts via `/shifts` endpoints, with `pos.shifts.operate`. The web POS uses the same shift service.
+- **Phase 9.6 update:** Device revocation UI is available in the store owner's business workspace under **Connected Devices**, requiring `pos.devices.manage`. Existing owner accounts pass automatically; staff require explicit permission.
+- **Phase 9.6 update:** `GET /sync/manifest?branch_id=...` specifies `offline_sales_enabled=false`. Clients must not submit offline sales based on the movement feed. Duplicate online sale retries must preserve **identical order payload and UUID**; different payloads are rejected.
+- Returns, purchase orders, customer booking, push notifications, platform administration, multi-tender payment, and general remote management functions are not implemented as API write endpoints. Store-owner browser-based device revocation is available.
 - Do not use platform admin credentials. Existing platform admin email OTP still protects the web login separately.
 - Prevent logins on unverified or forced-reset accounts. A revoked device identity cannot be reactivated using the same UUID. Users can register a fresh UUID after security review.
 - Revoke a lost device via its `DELETE /devices/{id}` endpoint while signed in on another active device, or revoke its tokens and device record through an authorized administrator workflow. A staff member cannot revoke another user's devices via the v1 API.
@@ -99,3 +101,6 @@ For Phase 9 commit `447b95c`, GitHub Actions confirmed:
 - MySQL 8.4 migrations: passed
 
 The broader legacy feature test suite **still fails** (numerous existing platform, 2FA and billing assertions, many unexpected redirects). Do not regard the release as production-ready; isolate these regression failures and repeat full tests before deployment. Later commits should be checked for their own CI results.
+
+## Phase 9.6 implementation
+See [Phase 9.6 integration and rollout notes](PHASE9-6-API-STABILIZATION.md) for new shift endpoints, device management, retry semantics and CI limitations.
