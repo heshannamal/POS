@@ -16,7 +16,7 @@
                 <div><label for="template_slug">Unique identifier</label><input id="template_slug" name="slug" maxlength="55" required pattern="[a-z][a-z0-9_-]+" value="{{ old('slug') }}" placeholder="holiday_greeting"></div>
             </div>
             <label for="template_subject">Email subject</label>
-            <input id="template_subject" name="subject" maxlength="255" required value="{{ old('subject','News from {{platform_name}}') }}">
+            <input id="template_subject" name="subject" maxlength="255" required value="{{ old('subject','News from POS Cloud') }}">
             <label for="template_body">Email body (Markdown)</label>
             <div class="communication-toolbar" role="toolbar" aria-label="Template formatting">
                 <button type="button" class="btn btn-small btn-outline" data-md-format="bold">B</button>
@@ -25,7 +25,7 @@
                 <button type="button" class="btn btn-small btn-outline" data-md-format="list">List</button>
                 <button type="button" class="btn btn-small btn-outline" data-md-format="link">Link</button>
             </div>
-            <textarea id="template_body" name="body_markdown" data-markdown-editor rows="16" maxlength="30000" required>{{ old('body_markdown',"Hello {{user_name}},\n\nWrite your message here.\n\n— {{platform_name}}") }}</textarea>
+            <textarea id="template_body" name="body_markdown" data-markdown-editor rows="16" maxlength="30000" required>{{ old('body_markdown',"Hello,\n\nWrite your message here.\n\n— POS Cloud") }}</textarea>
             <button class="btn btn-primary">Create template →</button>
         </form>
         <form method="POST" action="{{ route('platform.communications.templates.preview') }}" id="template-preview-form" target="_blank" class="form-stack" style="margin-top:16px">
