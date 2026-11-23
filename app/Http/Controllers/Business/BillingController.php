@@ -63,6 +63,13 @@ class BillingController extends Controller
             'auto_renew'=>['required','boolean'],
             'cancel_at_period_end'=>['required','boolean'],
         ]);
+        if ($data['auto_renew'] && $data['cancel_at_period_end']) {
+            return back()->withErrors(['auto_renew'=>'Choose either renewal reminders or cancellation at period end, not both.']);
+        }
+        if ($data['cancel_at_period_end'] && ! $tenant->subscription?->ends_at) {
+            return back()->withErrors(['cancel_at_period_end'=>'This subscription has no fixed paid end date. Contact platform billing for cancellation.']);
+        }
+
         DB::transaction(function () use ($request,$tenant,$data): void {
             $subscription=Subscription::where('tenant_id',$tenant->id)->lockForUpdate()->firstOrFail();
             $subscription->update([
