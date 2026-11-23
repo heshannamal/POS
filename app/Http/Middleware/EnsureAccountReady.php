@@ -31,6 +31,29 @@ class EnsureAccountReady
             );
         }
 
+        if ($user && $user->is_platform_admin) {
+            $factor = app(\App\Services\PlatformTwoFactor::class);
+            if ($factor->required($user) && ! $factor->verified($request)) {
+                return redirect()->to($factor->destination($request));
+            }
+        }
+        if ($user && ! app(\App\Services\UserSessionTracker::class)->track($request)) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            return redirect()->route('login')->with('status', 'Session expired or revoked. Sign in again.');
+        }
+
+        $days = (int) config('platform_security.password_expiry_days', 0);
+        if ($user && $days > 0 && $user->password_changed_at
+            && $user->password_changed_at->lt(now()->subDays($days))) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            return redirect()->route('password.request')->with(
+                'status', 'Your password has expired. Request a secure reset link.'
+            );
+        }
         return $next($request);
     }
 }

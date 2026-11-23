@@ -10,7 +10,19 @@ class EnsurePlatformAdmin
 {
     public function handle(Request $request, Closure $next): Response
     {
-        abort_unless($request->user()?->is_platform_admin && ! $request->user()->isTemporaryAdminExpired(), 403);
+        $user = $request->user();
+        abort_unless($user?->is_platform_admin && ! $user->isTemporaryAdminExpired(), 403);
+        $factor = app(\App\Services\PlatformTwoFactor::class);
+        if ($factor->required($user) && ! $factor->verified($request)) {
+            return redirect()->to($factor->destination($request));
+        }
+        if (app(\App\Services\PlatformAccess::class)->isCustom($user)) {
+            // Each custom route is subsequently protected by its scoped
+            // platform.role middleware; dashboard needs its own permission.
+            if ($request->routeIs('platform.dashboard')) {
+                abort_unless(app(\App\Services\PlatformAccess::class)->allowsDashboard($user, $request), 403);
+            }
+        }
 
         return $next($request);
     }

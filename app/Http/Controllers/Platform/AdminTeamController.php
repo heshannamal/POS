@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Platform;
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\User;
+use App\Models\PlatformRole;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -33,8 +34,16 @@ class AdminTeamController extends Controller
         return view('platform.admins.index', [
             'administrators' => $administrators,
             'candidates' => $candidates,
-            'roles' => self::ROLES,
+            'roles' => array_merge(self::ROLES, PlatformRole::where('is_active', true)
+                ->orderBy('name')->pluck('id')->map(fn ($id) => 'custom_'.$id)->all()),
+            'customRoles' => PlatformRole::where('is_active', true)->get(),
         ]);
+    }
+
+    private function allowedRoles(): array
+    {
+        return array_merge(self::ROLES, PlatformRole::where('is_active', true)
+            ->pluck('id')->map(fn ($id) => 'custom_'.$id)->all());
     }
 
     private function password(Request $request): void
@@ -51,7 +60,7 @@ class AdminTeamController extends Controller
     {
         $data = $request->validate([
             'email' => ['required', 'email', 'max:191', 'exists:users,email'],
-            'role' => ['required', Rule::in(self::ROLES)],
+            'role' => ['required', Rule::in($this->allowedRoles())],
             'admin_password' => ['required', 'string'],
         ]);
         $this->password($request);
@@ -60,7 +69,10 @@ class AdminTeamController extends Controller
             $target = User::where('email', $data['email'])->lockForUpdate()->firstOrFail();
             abort_unless($target->hasVerifiedEmail() && ! $target->is_platform_admin
                 && $target->temporary_admin_expires_at === null, 422);
-            $target->forceFill(['is_platform_admin' => true, 'platform_role' => $data['role']])->save();
+            $target->forceFill([
+                'is_platform_admin' => true, 'platform_role' => $data['role'],
+                'auth_session_version' => $target->auth_session_version + 1,
+            ])->save();
 
             AuditLog::create([
                 'actor_id' => $request->user()->id,
@@ -102,6 +114,7 @@ class AdminTeamController extends Controller
             $target->forceFill([
                 'is_platform_admin' => (bool) $data['enabled'],
                 'platform_role' => $data['enabled'] ? $data['role'] : null,
+                'auth_session_version' => $target->auth_session_version + 1,
             ])->save();
 
             AuditLog::create([

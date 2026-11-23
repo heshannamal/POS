@@ -13,7 +13,9 @@ class EnsurePlatformRole
         $user = $request->user();
         abort_unless($user && $user->is_platform_admin && ! $user->isTemporaryAdminExpired(), 403);
         $role = $user->platformRole();
-        abort_unless($role === 'super_admin' || in_array($role, $roles, true), 403);
+        if ($role !== 'super_admin' && ! in_array($role, $roles, true)) {
+            abort_unless(app(\App\Services\PlatformAccess::class)->allowsScope($user, $roles, $request), 403);
+        }
 
         return $next($request);
     }

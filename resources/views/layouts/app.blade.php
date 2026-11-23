@@ -29,6 +29,8 @@
         ['label' => 'Support Inbox', 'icon' => '✉', 'route' => 'platform.support.index', 'active' => 'platform.support.*', 'access' => ['support','operations']],
         ['label' => 'Announcements', 'icon' => '◉', 'route' => 'platform.announcements.index', 'active' => 'platform.announcements.*', 'access' => ['support','operations']],
         ['label' => 'Audit Log', 'icon' => '▨', 'route' => 'platform.audit.index', 'active' => 'platform.audit.*', 'access' => ['auditor']],
+        ['label' => 'Security Center', 'icon' => '⚿', 'route' => 'platform.security.index', 'active' => 'platform.security.*', 'access' => ['auditor']],
+        ['label' => 'Granular Roles', 'icon' => '♧', 'route' => 'platform.security.roles.index', 'active' => 'platform.security.roles.*', 'access' => ['super_admin'], 'permanent' => true],
         ['label' => 'Administrators', 'icon' => '♙', 'route' => 'platform.admins.index', 'active' => 'platform.admins.*', 'access' => ['super_admin'], 'permanent' => true],
         ['label' => 'Settings', 'icon' => '⚙', 'route' => 'platform.settings.index', 'active' => 'platform.settings.*', 'access' => ['super_admin'], 'permanent' => true],
     ] : [
@@ -56,8 +58,10 @@
                     $visible = true;
                     if ($platform && isset($item['access'])) {
                         $role = auth()->user()->platformRole();
-                        $visible = ($role === 'super_admin' || in_array($role, $item['access'], true))
-                            && (!isset($item['permanent']) || auth()->user()->isPermanentPlatformAdmin());
+                        $access = app(\App\Services\PlatformAccess::class);
+                        $visible = ($role === 'super_admin' || in_array($role, $item['access'], true)
+                            || ($access->isCustom(auth()->user()) && $access->canViewNavigation(auth()->user(), $item['route'])))
+                            && (!isset($item['permanent']) || ($role === 'super_admin' && auth()->user()->isPermanentPlatformAdmin()));
                     }
                     if (!$platform && isset($item['can'])) {
                         $authorization = app(\App\Services\TenantAuthorization::class);
@@ -110,6 +114,7 @@
                         @if($pendingPaymentReviews > 0)<span class="pending-review-count">{{ $pendingPaymentReviews > 99 ? '99+' : $pendingPaymentReviews }}</span>@endif
                     </a>
                 @endif
+                <a class="topbar-review-link" href="{{ route('security.sessions') }}" title="My sessions & security" aria-label="My security sessions">⚿</a>
                 <span class="topbar-user">{{ auth()->user()->name }}</span>
                 <button type="button" class="icon-button js-theme-toggle" aria-label="Toggle dark mode"><span class="theme-symbol">☾</span></button>
                 <span class="avatar">{{ mb_strtoupper(mb_substr(auth()->user()->name, 0, 1)) }}</span>
