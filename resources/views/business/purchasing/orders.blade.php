@@ -12,7 +12,7 @@
 </tbody></table></div>{{ $orders->links() }}</section>
 <script>
 (() => {
- const products=@json($products->map(fn($p)=>['id'=>$p->id,'name'=>$p->name,'sku'=>$p->sku,'cost'=>number_format($p->cost_minor/100,2,'.','')])->values());
+ const products={{ \Illuminate\Support\Js::from($products->map(fn($p)=>['id'=>$p->id,'name'=>$p->name,'sku'=>$p->sku,'cost'=>number_format($p->cost_minor/100,2,'.','')])->values()) }};
  let count=0; const wrap=document.getElementById('purchase-lines');
  document.getElementById('add-purchase-line').addEventListener('click',()=>{
   if(count>=100)return;
