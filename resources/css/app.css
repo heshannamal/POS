@@ -521,3 +521,29 @@ button[disabled] { cursor: not-allowed; opacity: .55; }
 .security-alert-action{display:flex;flex-wrap:wrap;gap:7px;}
 .security-alert-action input{max-width:220px;}
 @media(max-width:700px){.security-permission-grid{grid-template-columns:1fr;}.security-code-grid{grid-template-columns:1fr 1fr;}.security-role-card summary{gap:6px;}}
+
+
+/* POS Cloud communication center — theme-aware & mobile-friendly */
+.communication-rule-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:18px;align-items:start;}
+.communication-rule-grid .panel{height:100%;min-width:0;}
+.communication-rule-grid .check-line{display:flex;gap:10px;align-items:center;margin:3px 0;}
+.communication-toolbar{display:flex;gap:6px;flex-wrap:wrap;padding:9px;border:1px solid var(--border);border-radius:13px;background:var(--panel-muted);}
+.communication-toolbar .btn{min-width:36px;}
+.communication-variables{display:flex;flex-wrap:wrap;gap:9px;}
+.communication-variable{border:1px solid var(--border);border-radius:10px;padding:9px 11px;background:var(--panel-muted);color:var(--text);font-family:monospace;font-size:12px;cursor:pointer;}
+.communication-variable:hover{border-color:var(--primary);background:var(--panel);}
+.communication-editor-actions,.communication-inbox-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.communication-inbox-list{display:grid;gap:11px;margin-top:16px;}
+.communication-notification{border:1px solid var(--border);border-radius:15px;padding:15px;background:var(--panel);display:flex;align-items:flex-start;gap:13px;}
+.communication-notification.unread{background:var(--panel-muted);border-left:4px solid var(--primary);}
+.communication-notification-icon{width:36px;height:36px;flex-shrink:0;border-radius:11px;background:var(--panel-muted);color:var(--text);display:grid;place-items:center;}
+.communication-notification-body{min-width:0;flex:1;}
+.communication-notification-body p{white-space:pre-wrap;overflow-wrap:anywhere;color:var(--subtext);margin:10px 0;}
+.communication-notification-body .message-meta{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;}
+.communication-notification-body .message-meta strong{overflow-wrap:anywhere;}
+.communication-inbox-actions{justify-content:flex-start;}
+.communication-preferences{display:grid;gap:11px;}
+.communication-preferences form{padding:12px;border:1px solid var(--border);border-radius:13px;background:var(--panel-muted);gap:8px;}
+.communication-preferences .check-line{display:flex;align-items:center;gap:9px;margin:0;}
+.communication-editor-actions .check-line{display:flex;gap:9px;align-items:center;margin:0;}
+@media(max-width:650px){.communication-rule-grid{grid-template-columns:1fr;}.communication-notification{padding:12px;}.communication-variable{font-size:11px;}}

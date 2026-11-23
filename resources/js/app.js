@@ -105,3 +105,41 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+
+// Communication editor: markdown formatting and server-rendered safe preview.
+document.addEventListener('DOMContentLoaded', () => {
+    const editor = document.querySelector('[data-markdown-editor]');
+    if (!editor) return;
+    const insert = (prefix, suffix = prefix, placeholder = 'text') => {
+        const start = editor.selectionStart, end = editor.selectionEnd;
+        const picked = editor.value.slice(start, end) || placeholder;
+        editor.setRangeText(prefix + picked + suffix, start, end, 'select');
+        editor.focus();
+    };
+    const formats = {
+        bold: () => insert('**'),
+        italic: () => insert('*'),
+        heading: () => insert('## ', '', 'Heading'),
+        list: () => insert('- ', '', 'List item'),
+        link: () => insert('[', '](https://example.com)', 'Link text'),
+    };
+    document.querySelectorAll('[data-md-format]').forEach(button => {
+        button.addEventListener('click', () => formats[button.dataset.mdFormat]?.());
+    });
+    document.querySelectorAll('[data-insert-variable]').forEach(button => {
+        button.addEventListener('click', () => insert('', '', button.dataset.insertVariable));
+    });
+    const preview = document.querySelector('[data-template-preview]');
+    preview?.addEventListener('click', () => {
+        document.querySelector('#preview-subject').value =
+            document.querySelector('#template_subject')?.value || '';
+        document.querySelector('#preview-body').value = editor.value;
+    });
+    // The submit button is also keyboard accessible.
+    document.querySelector('#template-preview-form')?.addEventListener('submit', () => {
+        document.querySelector('#preview-subject').value =
+            document.querySelector('#template_subject')?.value || '';
+        document.querySelector('#preview-body').value = editor.value;
+    });
+});
