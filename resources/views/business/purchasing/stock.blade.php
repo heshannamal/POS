@@ -1,0 +1,15 @@
+@extends('layouts.app')
+@section('title','Inventory Controls')
+@section('header','Inventory Controls')
+@section('content')
+<div class="page-head"><div><span class="overline">PHASE 8 · STOCK CONTROLS</span><h1>Stock counts & reorder points</h1><p class="muted">Physical counts create auditable adjustments. Reorder thresholds provide purchasing suggestions.</p></div><a href="{{ route('business.purchasing.reports',$tenant) }}" class="btn btn-secondary">Purchasing reports →</a></div>
+<form method="get" class="panel"><label>Branch<select name="branch_id" onchange="this.form.submit()" class="form-control">@foreach($branches as $b)<option value="{{ $b->id }}" @selected($branch?->id===$b->id)>{{ $b->name }}</option>@endforeach</select></label></form>
+@if($branch)
+<section class="panel"><h2>Stock list</h2><table class="data-table" style="width:100%"><thead><tr><th>SKU / Product</th><th>Available</th><th>Reorder level</th><th>Set threshold</th><th>Physical count</th></tr></thead><tbody>
+@forelse($stocks as $stock)<tr><td>{{ $stock->sku }} · {{ $stock->name }}</td><td>{{ $stock->quantity }}</td><td>{{ $stock->reorder_level }}</td>
+<td><form method="post" action="{{ route('business.purchasing.stock.reorder',$tenant) }}">@csrf<input type="hidden" name="branch_id" value="{{ $branch->id }}"><input type="hidden" name="product_id" value="{{ $stock->product_id }}"><input name="reorder_level" type="number" min="0" max="10000000" value="{{ $stock->reorder_level }}" required class="form-control"><button class="btn btn-secondary">Save</button></form></td>
+<td><form method="post" action="{{ route('business.purchasing.stock.count',$tenant) }}">@csrf<input type="hidden" name="branch_id" value="{{ $branch->id }}"><input type="hidden" name="product_id" value="{{ $stock->product_id }}"><input name="counted_quantity" type="number" min="0" max="100000000" value="{{ $stock->quantity }}" required class="form-control"><input name="reason" placeholder="Count reason" required minlength="5" class="form-control"><button class="btn btn-primary">Post count</button></form></td>
+</tr>@empty<tr><td colspan="5">No stock entries in this branch.</td></tr>@endforelse</tbody></table>{{ $stocks->appends(['branch_id'=>$branch->id])->links() }}</section>
+<section class="panel"><h2>Recent physical counts</h2><table class="data-table" style="width:100%"><thead><tr><th>Date</th><th>Product</th><th>Before</th><th>Counted</th><th>Reason</th></tr></thead><tbody>@forelse($counts as $count)<tr><td>{{ $count->created_at }}</td><td>{{ $count->name }}</td><td>{{ $count->before_quantity }}</td><td>{{ $count->counted_quantity }}</td><td>{{ $count->reason }}</td></tr>@empty<tr><td colspan="5">No counts recorded.</td></tr>@endforelse</tbody></table></section>
+@else<section class="panel"><p>No assigned branches.</p></section>@endif
+@endsection
