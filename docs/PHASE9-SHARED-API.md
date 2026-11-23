@@ -10,7 +10,7 @@ Laravel 13, Laravel Sanctum v4, and the existing POS Cloud tenant / branch / rol
 - `POST /api/v1/tenants/{slug}/sales`: online cash checkout using **exactly the same PosCheckoutService** as browser POS. Requires open shift of logged-in cashier, allowed store, stock, active tenant/subscription, unique UUID idempotency key.
 - `GET /devices`, `DELETE /devices/{id}`, `POST /auth/logout`: inspect and revoke individual device tokens.
 - `pos_api_devices` and `personal_access_tokens` tables are additive. Token issued for max 30 days (default 14) and scoped to a single tenant and device. Browser cookies alone cannot authenticate device endpoints.
-- Every client request validates active tenant membership, current device status and `auth_session_version`; sales endpoints check current `pos.sales` permission and branch assignment.
+- Every client request validates active tenant membership, current device status, password expiry and `auth_session_version`; sales endpoints check current `pos.sales` permission and branch assignment. Device logins, logouts and revocations are audited.
 
 ## Installation and upgrade
 
