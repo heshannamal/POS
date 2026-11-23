@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Business;
 
 use App\Http\Controllers\Controller;
+use App\Services\PosBranchAccess;
 use App\Models\AuditLog;
 use App\Models\Branch;
 use App\Models\Tenant;
@@ -16,15 +17,16 @@ class PosRegisterController extends Controller
 {
     public function index(Request $request, Tenant $tenant, PosShiftAccounting $accounting)
     {
-        $branches = Branch::where('tenant_id',$tenant->id)->orderBy('name')->get();
+        $allowed=app(PosBranchAccess::class)->ids($request->user(),$tenant);
+        $branches = Branch::where('tenant_id',$tenant->id)->whereIn('id',$allowed)->orderBy('name')->get();
         $registers = DB::table('pos_registers as r')
             ->join('branches as b','b.id','=','r.branch_id')
-            ->where('r.tenant_id',$tenant->id)
+            ->where('r.tenant_id',$tenant->id)->whereIn('r.branch_id',$allowed)
             ->select('r.*','b.name as branch_name')->orderBy('r.id')->get();
         $openShifts = DB::table('pos_shifts as s')
             ->join('pos_registers as r','r.id','=','s.register_id')
             ->join('users as u','u.id','=','s.user_id')
-            ->where('s.tenant_id',$tenant->id)->whereNull('s.closed_at')
+            ->where('s.tenant_id',$tenant->id)->whereIn('r.branch_id',$allowed)->whereNull('s.closed_at')
             ->select('s.*','r.name as register_name','r.branch_id','u.name as cashier_name')
             ->orderBy('s.id')->get();
         $openShifts->each(function ($shift) use ($accounting) {
@@ -32,7 +34,7 @@ class PosRegisterController extends Controller
         });
         $recent = DB::table('pos_shifts as s')
             ->join('pos_registers as r','r.id','=','s.register_id')
-            ->where('s.tenant_id',$tenant->id)->whereNotNull('s.closed_at')
+            ->where('s.tenant_id',$tenant->id)->whereIn('r.branch_id',$allowed)->whereNotNull('s.closed_at')
             ->select('s.*','r.name as register_name')->orderByDesc('s.id')->limit(30)->get();
         return view('business.pos.registers',compact('tenant','branches','registers','openShifts','recent'));
     }
@@ -44,6 +46,7 @@ class PosRegisterController extends Controller
             'name'=>'required|string|max:120',
         ]);
         DB::transaction(function () use ($tenant,$request,$data) {
+            app(PosBranchAccess::class)->ensure($request->user(),$tenant,(int)$data['branch_id']);
             $id=DB::table('pos_registers')->insertGetId([
                 'tenant_id'=>$tenant->id,'branch_id'=>$data['branch_id'],'name'=>$data['name'],
                 'is_active'=>true,'created_at'=>now(),'updated_at'=>now(),
@@ -59,6 +62,7 @@ class PosRegisterController extends Controller
             Tenant::whereKey($tenant->id)->lockForUpdate()->firstOrFail();
             $row=DB::table('pos_registers')->where('tenant_id',$tenant->id)->where('id',$register)->lockForUpdate()->first();
             abort_unless($row,404);
+            app(PosBranchAccess::class)->ensure($request->user(),$tenant,(int)$row->branch_id);
             $open=DB::table('pos_shifts')->where('register_id',$register)->whereNull('closed_at')->exists();
             if($open) throw ValidationException::withMessages(['register'=>'Close the open shift first.']);
             DB::table('pos_registers')->where('id',$register)->update(['is_active'=>!$row->is_active,'updated_at'=>now()]);
@@ -79,6 +83,7 @@ class PosRegisterController extends Controller
             $register=DB::table('pos_registers')->where('tenant_id',$tenant->id)
                 ->where('id',$data['register_id'])->where('is_active',true)->lockForUpdate()->first();
             abort_unless($register,404);
+            app(PosBranchAccess::class)->ensure($request->user(),$tenant,(int)$register->branch_id);
             if(DB::table('pos_shifts')->where('register_id',$register->id)->whereNull('closed_at')->exists()) {
                 throw ValidationException::withMessages(['register_id'=>'This register already has an open shift.']);
             }
@@ -109,6 +114,8 @@ class PosRegisterController extends Controller
             $row=DB::table('pos_shifts')->where('tenant_id',$tenant->id)->where('id',$shift)
                 ->whereNull('closed_at')->lockForUpdate()->first();
             abort_unless($row,404);
+            $registerBranch=(int)DB::table('pos_registers')->where('tenant_id',$tenant->id)->where('id',$row->register_id)->value('branch_id');
+            app(PosBranchAccess::class)->ensure($request->user(),$tenant,$registerBranch);
             abort_unless((int)$row->user_id===$request->user()->id || $request->user()->isOwnerOf($tenant),403);
             $delta=$data['type']==='cash_in'?$amount:-$amount;
             if ($accounting->expected($shift,$row->opening_cash_minor)+$delta<0) {
