@@ -24,6 +24,9 @@ class EnsureApiDevice
         $user=$request->user();
         abort_if($user->is_platform_admin,403,'Platform administrator accounts cannot use business-device APIs.');
         abort_unless($user->hasVerifiedEmail() && $user->force_password_reset_at === null, 403);
+        $maxAge=(int) config('platform_security.password_expiry_days',0);
+        abort_if($maxAge>0 && $user->password_changed_at &&
+            $user->password_changed_at->lt(now()->subDays($maxAge)),403,'Password expired. Reset it using the web portal.');
         abort_unless($tenant->users()->whereKey($user->id)->wherePivot('status','active')->exists(),403);
 
         $device = DB::table('pos_api_devices')
@@ -38,6 +41,11 @@ class EnsureApiDevice
 
         if ($permission !== null) {
             abort_unless(app(TenantAuthorization::class)->allows($user,$tenant,$permission),403,'Missing permission.');
+        }
+        if(!$device->last_seen_at || \Illuminate\Support\Carbon::parse($device->last_seen_at)->lt(now()->subMinutes(5))) {
+            DB::table('pos_api_devices')->where('id',$device->id)->update([
+                'last_seen_at'=>now(),'last_ip'=>$request->ip(),
+            ]);
         }
         $request->attributes->set('pos_api_device',$device);
         return $next($request);
