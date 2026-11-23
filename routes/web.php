@@ -80,17 +80,12 @@ Route::middleware('guest')->group(function (): void {
 });
 
 Route::middleware(['auth', 'verified'])->prefix('security')->name('security.')->group(function (): void {
-    Route::get('/setup', [TwoFactorController::class, 'setup'])->name('setup');
-    Route::post('/setup', [TwoFactorController::class, 'enable'])->middleware('throttle:5,1')->name('enable');
+    Route::get('/setup', fn () => redirect()->route('security.challenge'))->name('setup');
     Route::get('/challenge', [TwoFactorController::class, 'challenge'])->name('challenge');
-    Route::post('/challenge', [TwoFactorController::class, 'verify'])
-        ->middleware('throttle:5,1')->name('verify');
-    Route::get('/recovery', [TwoFactorController::class, 'recovery'])->name('recovery');
-    Route::post('/recovery/regenerate', [TwoFactorController::class, 'regenerate'])
-        ->middleware('throttle:5,1')->name('regenerate');
-    Route::post('/disable', [TwoFactorController::class, 'disable'])
-        ->middleware('throttle:5,1')->name('disable');
+    Route::post('/challenge', [TwoFactorController::class, 'verify'])->middleware('throttle:5,1')->name('verify');
+    Route::post('/resend', [TwoFactorController::class, 'resend'])->middleware('throttle:3,1')->name('resend');
 });
+
 Route::middleware(['auth', 'verified', 'account.ready'])->prefix('security')->name('security.')->group(function (): void {
     Route::get('/sessions', [SessionController::class, 'index'])->name('sessions');
     Route::delete('/sessions/{session}', [SessionController::class, 'revoke'])
