@@ -97,6 +97,7 @@ class BillingOperationsController extends Controller
         return $request->validate([
             'from'=>['nullable','date_format:Y-m-d'],
             'to'=>['nullable','date_format:Y-m-d','after_or_equal:from'],
+            'mode'=>['nullable',Rule::in(['summary','ledger'])],
         ]);
     }
 
@@ -127,34 +128,78 @@ class BillingOperationsController extends Controller
     {
         $filter=$this->filters($request);
         $summary=$this->financialSummary($filter);
+        $paid=BillingInvoice::withSum('refunds','amount_minor')->where('status','paid')
+            ->when($filter['from']??null,fn($q,$v)=>$q->whereDate('issued_at','>=',$v))
+            ->when($filter['to']??null,fn($q,$v)=>$q->whereDate('issued_at','<=',$v))
+            ->get();
+
+        $groupRows=function ($groups, string $label) {
+            return $groups->map(function ($items,$key) use ($label) {
+                $first=$items->first();
+                $gross=(int)$items->sum('total_minor');
+                $refunded=(int)$items->sum('refunds_sum_amount_minor');
+                return ['name'=>$label==='month'?$first->issued_at->format('Y-m'):($label==='plan'?$first->plan_name:$first->bill_to_name),
+                    'currency'=>$first->currency,'count'=>$items->count(),
+                    'gross_minor'=>$gross,'refunded_minor'=>$refunded,'net_minor'=>$gross-$refunded];
+            })->sortByDesc('net_minor')->values()->take(25);
+        };
+        $byPlan=$groupRows($paid->groupBy(fn($i)=>$i->currency.'|'.$i->plan_name),'plan');
+        $byTenant=$groupRows($paid->groupBy(fn($i)=>$i->currency.'|'.$i->tenant_id),'tenant');
+        $byMonth=$groupRows($paid->groupBy(fn($i)=>$i->currency.'|'.$i->issued_at->format('Y-m')),'month')
+            ->sortBy('name')->values();
         $recent=BillingInvoice::with('tenant:id,name,slug')->latest('id')->limit(12)->get();
-        return view('platform.billing.report',compact('summary','recent'));
+        return view('platform.billing.report',compact('summary','recent','byPlan','byTenant','byMonth'));
     }
 
     public function export(Request $request): StreamedResponse
     {
         $filter=$this->filters($request);
         $summary=$this->financialSummary($filter);
+        $ledger=$filter['mode']??'summary';
+        $invoices=$ledger==='ledger'
+            ? BillingInvoice::withSum('refunds','amount_minor')
+                ->when($filter['from']??null,fn($q,$v)=>$q->whereDate('issued_at','>=',$v))
+                ->when($filter['to']??null,fn($q,$v)=>$q->whereDate('issued_at','<=',$v))
+                ->orderBy('id')->get()
+            : collect();
         AuditLog::create([
             'actor_id'=>$request->user()->id,
             'action'=>'billing.report.exported',
-            'metadata'=>['from'=>$filter['from']??null,'to'=>$filter['to']??null],
+            'metadata'=>['from'=>$filter['from']??null,'to'=>$filter['to']??null,'mode'=>$ledger],
             'ip_address'=>$request->ip(),
         ]);
-        return response()->streamDownload(function () use ($summary): void {
+        return response()->streamDownload(function () use ($summary,$invoices,$ledger): void {
             $stream=fopen('php://output','w');
-            fputcsv($stream,['Currency','Issued count','Paid count','Gross paid minor units',
-                'Refunded minor units','Net paid minor units','Pending invoice minor units']);
-            foreach ($summary as $row) {
-                fputcsv($stream,[
-                    $row['currency'],$row['issued_count'],$row['paid_count'],
-                    $row['gross_minor'],$row['refunded_minor'],
-                    $row['gross_minor']-$row['refunded_minor'],
-                    $row['unpaid_minor'],
-                ]);
+            if ($ledger==='ledger') {
+                fputcsv($stream,['Invoice','Business','Currency','Status','Plan','Cycle',
+                    'List minor','Plan discount minor','Coupon minor','Tax minor',
+                    'Total minor','Refunded minor','Issue date','Paid date']);
+                foreach ($invoices as $invoice) {
+                    $safeName=(string)$invoice->bill_to_name;
+                    if (preg_match('/^[=+@\-\t\r]/',$safeName)) $safeName="'".$safeName;
+                    fputcsv($stream,[
+                        $invoice->number,$safeName,$invoice->currency,$invoice->status,
+                        $invoice->plan_name,$invoice->billing_cycle,
+                        $invoice->list_price_minor,$invoice->plan_discount_minor,
+                        $invoice->coupon_discount_minor,$invoice->tax_minor,
+                        $invoice->total_minor,(int)$invoice->refunds_sum_amount_minor,
+                        $invoice->issued_at?->format('Y-m-d'),$invoice->paid_at?->format('Y-m-d'),
+                    ]);
+                }
+            } else {
+                fputcsv($stream,['Currency','Issued count','Paid count','Gross paid minor units',
+                    'Refunded minor units','Net paid minor units','Pending invoice minor units']);
+                foreach ($summary as $row) {
+                    fputcsv($stream,[
+                        $row['currency'],$row['issued_count'],$row['paid_count'],
+                        $row['gross_minor'],$row['refunded_minor'],
+                        $row['gross_minor']-$row['refunded_minor'],
+                        $row['unpaid_minor'],
+                    ]);
+                }
             }
             fclose($stream);
-        },'billing-summary-'.now()->format('Ymd-His').'.csv',[
+        },'billing-'.$ledger.'-'.now()->format('Ymd-His').'.csv',[
             'Content-Type'=>'text/csv; charset=UTF-8',
             'X-Content-Type-Options'=>'nosniff',
             'Cache-Control'=>'private, no-store',
