@@ -10,6 +10,7 @@ use App\Http\Middleware\EnsureTenantPermission;
 use App\Http\Middleware\EnsureTenantFeature;
 use App\Http\Middleware\EnsurePosOperational;
 use App\Http\Middleware\EnsurePurchasingView;
+use App\Http\Middleware\EnsureApiDevice;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -34,6 +35,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant.feature' => EnsureTenantFeature::class,
             'pos.operational' => EnsurePosOperational::class,
             'purchasing.view' => EnsurePurchasingView::class,
+            'api.device' => EnsureApiDevice::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
