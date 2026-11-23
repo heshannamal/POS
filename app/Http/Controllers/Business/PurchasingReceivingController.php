@@ -7,6 +7,7 @@ use App\Models\AuditLog;
 use App\Models\PosStock;
 use App\Models\Tenant;
 use App\Services\PosBranchAccess;
+use App\Support\PurchaseAmounts;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -94,8 +95,9 @@ class PurchasingReceivingController extends Controller
                 $receivedGross+=(int)$line->received_quantity*(int)$line->unit_cost_minor;
                 if($line->received_quantity<$line->quantity)$complete=false;
             }
-            $receivedAmount=$po->subtotal_minor>0
-                ? intdiv($receivedGross*$po->total_minor,$po->subtotal_minor) : 0;
+            $receivedAmount=PurchaseAmounts::receivedValue(
+                $receivedGross,(int)$po->subtotal_minor,(int)$po->total_minor
+            );
             DB::table('pos_purchase_orders')->where('id',$order)->update([
                 'received_minor'=>$receivedAmount,'status'=>$complete?'received':'partial','updated_at'=>now(),
             ]);
