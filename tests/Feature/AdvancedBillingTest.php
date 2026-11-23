@@ -346,4 +346,53 @@ class AdvancedBillingTest extends TestCase
         $this->assertSame('paid',$invoice->status);
         $this->assertNotNull($invoice->receipt_number);
     }
+
+    public function test_quote_preview_calculates_tax_coupon_and_does_not_reserve_coupon(): void
+    {
+        $f=$this->fixture();
+        $f['plan']->update(['is_discount_available'=>true,'discount_percentage'=>'10.00']);
+        PlatformSetting::updateOrCreate(['key'=>'billing.tax_basis_points'],['value'=>'500']);
+        BillingCoupon::create([
+            'code'=>'QUOTE10','discount_type'=>'percent','discount_value'=>1000,
+            'max_uses'=>1,'max_uses_per_tenant'=>1,'is_active'=>true,
+        ]);
+
+        $this->actingAs($f['owner'])->getJson(route('business.subscription.payments.quote',$f['tenant']).'?'.http_build_query([
+            'plan_id'=>$f['plan']->id,'billing_cycle'=>'monthly','coupon_code'=>'quote10',
+        ]))->assertOk()->assertJson([
+            'currency'=>'LKR',
+            'list_price_minor'=>10000,
+            'plan_discount_minor'=>1000,
+            'coupon_discount_minor'=>900,
+            'tax_minor'=>405,
+            'total_minor'=>8505,
+        ]);
+        $this->assertDatabaseCount('billing_coupon_redemptions',0);
+
+        $this->actingAs($f['owner'])->getJson(route('business.subscription.payments.quote',$f['tenant']).'?'.http_build_query([
+            'plan_id'=>$f['plan']->id,'billing_cycle'=>'monthly','coupon_code'=>'unknown',
+        ]))->assertUnprocessable()->assertJsonValidationErrors('coupon_code');
+    }
+
+    public function test_invoice_resend_requires_active_email_rule_and_global_switch(): void
+    {
+        $f=$this->fixture();
+        $payment=$this->submit($f);
+        $invoice=$payment->billingInvoice;
+        $this->actingAs($f['admin'])->post(route('platform.billing.invoices.resend',$invoice))
+            ->assertSessionHasErrors('invoice');
+        PlatformSetting::updateOrCreate(['key'=>'communications.email_enabled'],['value'=>'1']);
+        PlatformSetting::updateOrCreate(['key'=>'communications.test_mode'],['value'=>'1']);
+        PlatformSetting::updateOrCreate(['key'=>'communications.test_recipients'],['value'=>'qa@example.test']);
+        $this->actingAs($f['admin'])->post(route('platform.billing.invoices.resend',$invoice))
+            ->assertSessionHasErrors('invoice');
+        \App\Models\CommunicationRule::where('event_key','billing.invoice_issued')
+            ->update(['send_email'=>true]);
+        $this->actingAs($f['admin'])->post(route('platform.billing.invoices.resend',$invoice))
+            ->assertRedirect();
+        $this->assertDatabaseHas('communication_deliveries',[
+            'event_key'=>'billing.invoice_issued',
+            'recipient_email'=>'qa@example.test',
+        ]);
+    }
 }
