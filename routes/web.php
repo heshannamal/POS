@@ -165,7 +165,7 @@ Route::middleware(['auth', 'verified', 'account.ready'])->group(function (): voi
                 Route::post('/registers/shifts/{shift}/movements', [PosRegisterController::class, 'movement'])->middleware('pos.operational')->name('pos.shifts.movement');
                 Route::post('/registers/shifts/{shift}/close', [PosRegisterController::class, 'close'])->name('pos.shifts.close');
             });
-            Route::middleware('tenant.permission:settings.manage')->group(function (): void {
+            Route::middleware('tenant.permission:pos.devices.manage')->group(function (): void {
                 Route::get('/application-devices', [PosDeviceManagementController::class,'index'])
                     ->name('pos.devices.index');
                 Route::delete('/application-devices/{device}', [PosDeviceManagementController::class,'revoke'])
