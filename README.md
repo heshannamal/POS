@@ -65,3 +65,7 @@ See [Phase 5 Communication Center](docs/PHASE5-COMMUNICATION-CENTER.md) for edit
 ## Phase 6 — Advanced Subscription Billing
 
 [Invoices, verified receipts, coupons, tax defaults, externally reconciled refunds/credit notes, renewal controls and financial reports](docs/PHASE6-ADVANCED-BILLING.md). Payment activation still requires independent administrator approval; card checkout and automatic charging remain disconnected.
+
+## Phase 7 — POS operations foundation (partial)
+
+Initial [product catalog, branch inventory, cash sales terminal and receipts](docs/PHASE7-POS-FOUNDATION.md) are implemented. Advanced register shifts, refunds, retail taxes, barcode printer integrations and stock analytics are still pending. This is **not** a completed Phase 7. Apply incremental migrations after backing up your database.
