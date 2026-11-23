@@ -104,10 +104,10 @@ class AuthController extends Controller
             $request->session()->put('account_session_user_id', $user->id);
             $request->session()->forget(['platform_2fa_verified_user', 'platform_2fa_verified_at']);
             try {
-                app(\\App\\Services\\EmailLoginCode::class)->send($user, $request->ip());
-            } catch (\\Throwable $e) {
+                app(\App\Services\EmailLoginCode::class)->send($user, $request->ip());
+            } catch (\Throwable $e) {
                 report($e);
-                \\Illuminate\\Support\\Facades\\Auth::logout();
+                \Illuminate\Support\Facades\Auth::logout();
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
                 return redirect()->route('login')->withErrors([
