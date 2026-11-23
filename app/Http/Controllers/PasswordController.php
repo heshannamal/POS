@@ -37,7 +37,7 @@ class PasswordController extends Controller
         $request->validate([
             'token' => ['required'],
             'email' => ['required', 'email'],
-            'password' => ['required', 'confirmed', \Illuminate\Validation\Rules\Password::min(12)->letters()->numbers()],
+            'password' => ['required', 'confirmed', \Illuminate\Validation\Rules\Password::min((int) config('platform_security.password_min_length', 12))->letters()->numbers()],
         ]);
 
         $result = Password::reset(
@@ -48,6 +48,7 @@ class PasswordController extends Controller
                     'force_password_reset_at' => null,
                     'auth_revoked_at' => now(),
                     'auth_session_version' => $user->auth_session_version + 1,
+                    'password_changed_at' => now(),
                 ])
                     ->setRememberToken(Str::random(60));
                 $user->save();

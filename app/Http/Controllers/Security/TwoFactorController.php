@@ -21,7 +21,9 @@ class TwoFactorController extends Controller
     {
         $user = $request->user();
         abort_unless($user && $user->is_platform_admin
-            && ! $user->isTemporaryAdminExpired(), 403);
+            && ! $user->isTemporaryAdminExpired()
+            && ! $user->force_password_reset_at
+            && (int) $request->session()->get('account_session_version', 0) === (int) $user->auth_session_version, 403);
         return $user;
     }
 
@@ -148,6 +150,13 @@ class TwoFactorController extends Controller
         }
 
         $factor->markVerified($request);
+        $user->forceFill(['last_login_at' => now(), 'last_login_ip' => $request->ip()])->save();
+        \App\Models\LoginEvent::create([
+            'user_id' => $user->id, 'outcome' => 'success',
+            'email_hash' => hash('sha256', mb_strtolower($user->email)),
+            'ip_address' => $request->ip(),
+            'user_agent' => \Illuminate\Support\Str::limit((string) $request->userAgent(), 500, ''),
+        ]);
         AuditLog::create([
             'actor_id' => $user->id, 'action' => 'security.two_factor.verified',
             'subject_type' => User::class, 'subject_id' => $user->id,

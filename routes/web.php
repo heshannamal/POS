@@ -1,6 +1,10 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Security\TwoFactorController;
+use App\Http\Controllers\Security\SessionController;
+use App\Http\Controllers\Platform\SecurityDashboardController;
+use App\Http\Controllers\Platform\PlatformRoleController;
 use App\Http\Controllers\BusinessDashboardController;
 use App\Http\Controllers\Business\EmployeeController;
 use App\Http\Controllers\Business\RoleController;
@@ -62,6 +66,24 @@ Route::middleware('guest')->group(function (): void {
     Route::get('/reset-password/{token}', [PasswordController::class, 'resetForm'])->name('password.reset');
     Route::post('/reset-password', [PasswordController::class, 'reset'])
         ->middleware('throttle:5,1')->name('password.update');
+});
+
+Route::middleware(['auth', 'verified'])->prefix('security')->name('security.')->group(function (): void {
+    Route::get('/setup', [TwoFactorController::class, 'setup'])->name('setup');
+    Route::post('/setup', [TwoFactorController::class, 'enable'])->middleware('throttle:5,1')->name('enable');
+    Route::get('/challenge', [TwoFactorController::class, 'challenge'])->name('challenge');
+    Route::post('/challenge', [TwoFactorController::class, 'verify'])
+        ->middleware('throttle:5,1')->name('verify');
+    Route::get('/recovery', [TwoFactorController::class, 'recovery'])->name('recovery');
+    Route::post('/recovery/regenerate', [TwoFactorController::class, 'regenerate'])
+        ->middleware('throttle:5,1')->name('regenerate');
+    Route::post('/disable', [TwoFactorController::class, 'disable'])
+        ->middleware('throttle:5,1')->name('disable');
+});
+Route::middleware(['auth', 'verified', 'account.ready'])->prefix('security')->name('security.')->group(function (): void {
+    Route::get('/sessions', [SessionController::class, 'index'])->name('sessions');
+    Route::delete('/sessions/{session}', [SessionController::class, 'revoke'])
+        ->middleware('throttle:5,1')->name('sessions.revoke');
 });
 
 Route::middleware(['auth', 'account.ready'])->group(function (): void {
@@ -130,6 +152,8 @@ Route::middleware(['auth', 'verified', 'account.ready'])->group(function (): voi
     Route::prefix('platform')->name('platform.')
         ->middleware('platform.admin')->group(function (): void {
             Route::get('/dashboard', [PlatformDashboard::class, 'index'])->name('dashboard');
+            Route::get('/security', [SecurityDashboardController::class, 'index'])
+                ->middleware('platform.role:auditor')->name('security.index');
 
             Route::get('/businesses/archived', [TenantArchiveController::class, 'index'])
                 ->middleware('platform.permanent')->name('tenants.archived');
@@ -260,6 +284,11 @@ Route::middleware(['auth', 'verified', 'account.ready'])->group(function (): voi
                     ->middleware('throttle:5,1')->name('tenant-users.force-reset');
                 Route::post('/tenant-users/{tenant:slug}/{user}/revoke-sessions', [GlobalTenantUserController::class, 'revokeSessions'])
                     ->middleware('throttle:5,1')->name('tenant-users.revoke-sessions');
+                Route::get('/security/roles', [PlatformRoleController::class, 'index'])->name('security.roles.index');
+                Route::post('/security/roles', [PlatformRoleController::class, 'store'])->middleware('throttle:5,1')->name('security.roles.store');
+                Route::put('/security/roles/{role}', [PlatformRoleController::class, 'update'])->middleware('throttle:5,1')->name('security.roles.update');
+                Route::post('/security/alerts/{alert}/resolve', [SecurityDashboardController::class, 'resolve'])
+                    ->name('security.alerts.resolve');
                 Route::get('/administrators', [AdminTeamController::class, 'index'])->name('admins.index');
                 Route::post('/administrators', [AdminTeamController::class, 'store'])
                     ->middleware('throttle:5,1')->name('admins.store');
