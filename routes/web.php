@@ -181,11 +181,12 @@ Route::middleware(['auth', 'verified', 'account.ready'])->group(function (): voi
                 Route::delete('/suppliers/{supplier}', [PurchasingSupplierController::class,'archive'])->middleware('pos.operational')->name('purchasing.suppliers.archive');
             });
             Route::middleware('tenant.permission:pos.purchases.manage')->group(function (): void {
-                Route::get('/purchase-orders', [PurchasingOrderController::class,'index'])->name('purchasing.orders');
                 Route::post('/purchase-orders', [PurchasingOrderController::class,'store'])->middleware(['pos.operational','throttle:30,1'])->name('purchasing.orders.store');
                 Route::post('/purchase-orders/{order}/approve', [PurchasingOrderController::class,'approve'])->middleware('pos.operational')->name('purchasing.orders.approve');
                 Route::post('/purchase-orders/{order}/cancel', [PurchasingOrderController::class,'cancel'])->middleware('pos.operational')->name('purchasing.orders.cancel');
             });
+            Route::get('/purchase-orders', [PurchasingOrderController::class,'index'])
+                ->middleware('purchasing.view')->name('purchasing.orders');
             Route::get('/purchase-orders/{order}', [PurchasingOrderController::class,'show'])
                 ->middleware('purchasing.view')->name('purchasing.orders.show');
             Route::post('/purchase-orders/{order}/receive', [PurchasingReceivingController::class,'store'])
