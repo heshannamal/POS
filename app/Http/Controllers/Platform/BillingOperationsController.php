@@ -175,11 +175,14 @@ class BillingOperationsController extends Controller
                     'List minor','Plan discount minor','Coupon minor','Tax minor',
                     'Total minor','Refunded minor','Issue date','Paid date']);
                 foreach ($invoices as $invoice) {
-                    $safeName=(string)$invoice->bill_to_name;
-                    if (preg_match('/^[=+@\-\t\r]/',$safeName)) $safeName="'".$safeName;
+                    $safeCell = static function (string $value): string {
+                        // Prevent spreadsheet formula injection in untrusted names.
+                        return preg_match('/^[\s]*[=+@\-]/u',$value) ? "'".$value : $value;
+                    };
+                    $safeName=$safeCell((string)$invoice->bill_to_name);
                     fputcsv($stream,[
                         $invoice->number,$safeName,$invoice->currency,$invoice->status,
-                        $invoice->plan_name,$invoice->billing_cycle,
+                        $safeCell($invoice->plan_name),$invoice->billing_cycle,
                         $invoice->list_price_minor,$invoice->plan_discount_minor,
                         $invoice->coupon_discount_minor,$invoice->tax_minor,
                         $invoice->total_minor,(int)$invoice->refunds_sum_amount_minor,

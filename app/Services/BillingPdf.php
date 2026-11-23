@@ -73,7 +73,7 @@ class BillingPdf
             // Single-page output, plain text, avoid PDF-control injection.
             $value = iconv('UTF-8','ASCII//TRANSLIT//IGNORE',(string)$row);
             $value = preg_replace('/[^\x20-\x7E]/', ' ', $value ?: '');
-            $value = substr($value,0,105);
+            $value = substr($value,0,78);
             $value = str_replace(['\\','(',')'], ['\\\\','\\(','\\)'], $value);
             $stream .= ($index ? "T*\n" : '').'('.$value.") Tj\n";
             if ($index >= 31) break;
