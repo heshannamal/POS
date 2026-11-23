@@ -24,7 +24,7 @@ return new class extends Migration {
 
     public function down(): void
     {
-        // Only drop on an explicit rollback. Never run migrate:fresh on live data.
-        Schema::dropIfExists('personal_access_tokens');
+        // Deliberately preserve existing Sanctum tokens. The table may have
+        // already been created by Sanctum's published vendor migration.
     }
 };
