@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Business;
 
 use App\Http\Controllers\Controller;
+use App\Services\PosBranchAccess;
 use App\Models\AuditLog;
 use App\Models\PosSale;
 use App\Models\PosStock;
@@ -17,9 +18,10 @@ class PosReturnController extends Controller
 {
     public function index(Tenant $tenant)
     {
+        $allowed=app(PosBranchAccess::class)->ids(auth()->user(),$tenant);
         $returns = DB::table('pos_returns as r')
             ->join('pos_sales as s','s.id','=','r.sale_id')
-            ->where('r.tenant_id',$tenant->id)
+            ->where('r.tenant_id',$tenant->id)->whereIn('s.branch_id',$allowed)
             ->select('r.*','s.currency')->orderByDesc('r.id')->paginate(25);
         return view('business.pos.returns',compact('tenant','returns'));
     }
@@ -27,6 +29,7 @@ class PosReturnController extends Controller
     public function create(Tenant $tenant, PosSale $sale)
     {
         abort_unless($sale->tenant_id===$tenant->id && $sale->status==='completed',404);
+        app(PosBranchAccess::class)->ensure(auth()->user(),$tenant,$sale->branch_id);
         $sale->load('items');
         $returned = DB::table('pos_return_items as ri')->join('pos_returns as r','r.id','=','ri.return_id')
             ->where('r.tenant_id',$tenant->id)->where('r.sale_id',$sale->id)
@@ -42,6 +45,7 @@ class PosReturnController extends Controller
     public function store(Request $request,Tenant $tenant,PosSale $sale,PosShiftAccounting $accounting)
     {
         abort_unless($sale->tenant_id===$tenant->id,404);
+        app(PosBranchAccess::class)->ensure($request->user(),$tenant,$sale->branch_id);
         $data=$request->validate([
             'idempotency_key'=>'required|uuid',
             'shift_id'=>['required','integer',Rule::exists('pos_shifts','id')->where('tenant_id',$tenant->id)->where('user_id',$request->user()->id)->whereNull('closed_at')],
