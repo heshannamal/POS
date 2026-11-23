@@ -49,6 +49,7 @@
         ['label' => 'Products & Stock', 'icon' => '◇', 'route' => 'business.pos.products', 'active' => 'business.pos.products*', 'can' => 'pos.inventory.manage'],
         ['label' => 'Inventory', 'icon' => '▦', 'route' => 'business.pos.inventory', 'active' => 'business.pos.inventory*', 'can' => 'pos.inventory.manage'],
         ['label' => 'Registers & Shifts', 'icon' => '▣', 'route' => 'business.pos.registers', 'active' => 'business.pos.registers*', 'can' => 'pos.shifts.operate'],
+        ['label' => 'Connected Devices', 'icon' => '▣', 'route' => 'business.pos.devices.index', 'active' => 'business.pos.devices.*', 'can' => 'settings.manage'],
         ['label' => 'Returns', 'icon' => '↶', 'route' => 'business.pos.returns', 'active' => 'business.pos.returns*', 'can' => 'pos.returns.manage'],
         ['label' => 'Suppliers', 'icon' => '♧', 'route' => 'business.purchasing.suppliers', 'active' => 'business.purchasing.suppliers*', 'can' => 'pos.suppliers.manage'],
         ['label' => 'Purchase Orders', 'icon' => '▤', 'route' => 'business.purchasing.orders', 'active' => 'business.purchasing.orders*', 'canAny' => ['pos.purchases.manage','pos.receiving.manage','pos.payables.manage','pos.purchasing.reports']],
