@@ -73,3 +73,7 @@ Initial [product catalog, branch inventory, cash sales terminal and receipts](do
 
 ## Phase 7 cashier operations (new)
 [Register shifts, cash in/out, reconciliations, partial cash refunds, inventory reports, CSV and browser-based barcode/thermal printing](docs/PHASE7-OPERATIONS.md) are implemented in the codebase. Granular POS permissions must be explicitly granted to staff. Local migrations, automated tests and actual printer acceptance tests are still required before production deployment.
+
+## Phase 8 — Purchasing & Inventory (first release)
+
+[Supplier directory, purchase orders, GRNs, payment evidence, stock counts, reorder controls and purchasing reports](docs/PHASE8-PURCHASING.md) are implemented with tenant-specific data, branch assignments and granular role permissions. Apply additive migrations and run the feature/unit test suite on a backed-up local MySQL database. Advanced batch expiry, purchase tax, supplier returns, aging, and gateway reconciliations remain future work; the first release is not production-validated.
