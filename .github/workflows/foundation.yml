@@ -30,6 +30,8 @@ jobs:
         run: php artisan view:cache
       - name: Verify Phase 9 API routes
         run: vendor/bin/phpunit --no-progress --filter=Phase9ApiRoutesTest
+      - name: Verify Phase 9 device workflows
+        run: vendor/bin/phpunit --no-progress --filter=Phase9DeviceIntegrationTest
       - name: Run feature tests
         run: vendor/bin/phpunit --no-progress --display-errors --display-warnings
       - uses: actions/setup-node@v4
