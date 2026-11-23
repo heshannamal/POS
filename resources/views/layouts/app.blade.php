@@ -44,17 +44,19 @@
         ['label' => 'Settings', 'icon' => '⚙', 'route' => 'platform.settings.index', 'active' => 'platform.settings.*', 'access' => ['super_admin'], 'permanent' => true],
     ] : [
         ['label' => 'Dashboard', 'icon' => '◫', 'route' => 'business.dashboard', 'active' => 'business.dashboard'],
-        ['label' => 'POS', 'icon' => '▣', 'route' => 'business.pos.terminal', 'active' => 'business.pos.terminal', 'can' => 'settings.manage'],
-        ['label' => 'Sales', 'icon' => '▤', 'route' => 'business.pos.sales', 'active' => 'business.pos.sales', 'can' => 'settings.manage'],
-        ['label' => 'Products & Stock', 'icon' => '◇', 'route' => 'business.pos.products', 'active' => 'business.pos.products*', 'can' => 'settings.manage'],
-        ['label' => 'Inventory', 'icon' => '▦', 'route' => 'business.pos.inventory', 'active' => 'business.pos.inventory*', 'can' => 'settings.manage'],
+        ['label' => 'POS', 'icon' => '▣', 'route' => 'business.pos.terminal', 'active' => 'business.pos.terminal', 'can' => 'pos.sales'],
+        ['label' => 'Sales', 'icon' => '▤', 'route' => 'business.pos.sales', 'active' => 'business.pos.sales', 'can' => 'pos.sales'],
+        ['label' => 'Products & Stock', 'icon' => '◇', 'route' => 'business.pos.products', 'active' => 'business.pos.products*', 'can' => 'pos.inventory.manage'],
+        ['label' => 'Inventory', 'icon' => '▦', 'route' => 'business.pos.inventory', 'active' => 'business.pos.inventory*', 'can' => 'pos.inventory.manage'],
+        ['label' => 'Registers & Shifts', 'icon' => '▣', 'route' => 'business.pos.registers', 'active' => 'business.pos.registers*', 'can' => 'pos.register.manage'],
+        ['label' => 'Returns', 'icon' => '↶', 'route' => 'business.pos.returns', 'active' => 'business.pos.returns*', 'can' => 'pos.returns.manage'],
         ['label' => 'Employees', 'icon' => '♙', 'route' => 'business.employees.index', 'active' => 'business.employees.*', 'can' => 'employees.view', 'feature' => 'staff.core'],
         ['label' => 'Roles & Permissions', 'icon' => '⚿', 'route' => 'business.roles.index', 'active' => 'business.roles.*', 'can' => 'employees.view', 'feature' => 'staff.core'],
         ['label' => 'Subscription', 'icon' => '▥', 'route' => 'business.subscription.index', 'active' => 'business.subscription.*'],
         ['label' => 'Support', 'icon' => '✉', 'route' => 'business.support.index', 'active' => 'business.support.*', 'can' => 'settings.manage'],
         ['label' => 'Notifications', 'icon' => '◉', 'route' => 'business.notifications.index', 'active' => 'business.notifications.*'],
         ['label' => 'Invoices & Billing', 'icon' => '▤', 'route' => 'business.billing.index', 'active' => 'business.billing.*', 'can' => 'settings.manage'],
-        ['label' => 'Reports', 'icon' => '▨', 'route' => null],
+        ['label' => 'Reports', 'icon' => '▨', 'route' => 'business.pos.reports', 'active' => 'business.pos.reports*', 'can' => 'pos.reports.view'],
     ];
 @endphp
 <div class="app-shell">
