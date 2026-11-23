@@ -6,17 +6,20 @@
 <form method="get" class="panel"><label>Branch <select name="branch_id" class="form-control">@foreach($branches as $store)<option value="{{ $store->id }}" @selected($branch?->id===$store->id)>{{ $store->name }}</option>@endforeach</select></label><label>Search name / SKU / barcode <input name="search" class="form-control" value="{{ request('search') }}"></label><button class="btn btn-secondary">Search</button></form>
 @if($branch)
 <div class="dashboard-grid">
-<section class="panel panel-wide"><h2>Available products</h2><div class="stat-grid">
+<section class="panel panel-wide"><h2>Available products</h2><p class="muted">USB barcode scanners work as keyboard input. Scan a barcode and press Enter.</p><label>Barcode scan <input type="text" class="form-control" id="barcode-scan" placeholder="Scan barcode here" autocomplete="off"></label><div class="stat-grid">
 @forelse($products as $product)
 <div class="stat-card"><strong>{{ $product->name }}</strong><small>{{ $product->sku }} · {{ $product->barcode }}</small><p>{{ $tenant->currency }} {{ number_format($product->price_minor/100,2) }}</p><small>{{ $product->track_stock?'Stock: '.($product->stocks->first()?->quantity??0):'Service / untracked' }}</small>
 <button type="button" class="btn btn-secondary js-add-product"
- data-product="{{ $product->id }}" data-name="{{ $product->name }}" data-price="{{ $product->price_minor }}"
+ data-product="{{ $product->id }}" data-name="{{ $product->name }}" data-price="{{ $product->price_minor }}" data-barcode="{{ $product->barcode }}" data-sku="{{ $product->sku }}"
  @disabled($product->track_stock && ($product->stocks->first()?->quantity??0)<=0)>Add to cart</button></div>
 @empty<p class="muted">No matching active products.</p>@endforelse
 </div></section>
 <section class="panel"><h2>Cart</h2>
+@if($openShift)<p class="muted">Register: {{ $openShift->register_name }} · Open shift #{{ $openShift->id }}</p>
+@else <div class="flash-error">No open cashier shift for this branch. <a href="{{ route('business.pos.registers',$tenant) }}">Open register</a> first.</div> @endif
 <form method="post" action="{{ route('business.pos.checkout',$tenant) }}" id="pos-checkout">@csrf
 <input type="hidden" name="branch_id" value="{{ $branch->id }}">
+<input type="hidden" name="shift_id" value="{{ $openShift?->id }}">
 <input type="hidden" name="idempotency_key" value="{{ (string) \Illuminate\Support\Str::uuid() }}">
 <div id="pos-cart-lines"><p class="muted">Your cart is empty.</p></div>
 <p><strong>Subtotal: {{ $tenant->currency }} <span id="pos-total">0.00</span></strong></p>
@@ -29,6 +32,19 @@
 (() => {
  const cart = new Map(), lines = document.getElementById('pos-cart-lines'), total = document.getElementById('pos-total');
  const pay = document.getElementById('pos-pay'), form = document.getElementById('pos-checkout');
+ const hasShift = {{ $openShift ? 'true' : 'false' }};
+ const scan = document.getElementById('barcode-scan');
+ scan?.addEventListener('keydown', (e) => {
+   if(e.key!=='Enter') return;
+   e.preventDefault();
+   const token=scan.value.trim().toLowerCase();
+   if(!token) return;
+   const btn=[...document.querySelectorAll('.js-add-product')].find(b =>
+      (b.dataset.barcode && b.dataset.barcode.toLowerCase()===token) || b.dataset.sku.toLowerCase()===token);
+   if(btn && !btn.disabled){btn.click();scan.value='';}
+   else {scan.setCustomValidity('Product not found or out of stock in this list.');scan.reportValidity();
+     setTimeout(()=>scan.setCustomValidity(''),1500);}
+ });
  document.querySelectorAll('.js-add-product').forEach(btn => btn.addEventListener('click', () => {
   const id=btn.dataset.product, prev=cart.get(id);
   cart.set(id,{name:btn.dataset.name,price:Number(btn.dataset.price),quantity:(prev?.quantity||0)+1});
@@ -47,7 +63,7 @@
    amount+=item.price*item.quantity;index++;
   }
   if(!index){const empty=document.createElement('p');empty.textContent='Your cart is empty.';lines.append(empty);}
-  total.textContent=(amount/100).toFixed(2);pay.disabled=!index;
+  total.textContent=(amount/100).toFixed(2);pay.disabled=!index || !hasShift;
  }
  form.addEventListener('submit',()=>{pay.disabled=true;});
 })();
