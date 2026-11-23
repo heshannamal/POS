@@ -70,7 +70,6 @@ return new class extends Migration {
             $t->bigInteger('before_quantity'); $t->bigInteger('counted_quantity');
             $t->string('reason',255); $t->timestamps();
         });
-        Schema::table('pos_stocks',function(Blueprint $t){$t->unsignedBigInteger('reorder_level')->default(0)->change();});
     }
     public function down(): void
     {
