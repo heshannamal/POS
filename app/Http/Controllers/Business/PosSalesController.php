@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Business;
 
 use App\Http\Controllers\Controller;
+use App\Services\PosBranchAccess;
 use App\Models\AuditLog;
 use App\Models\Branch;
 use App\Models\PosProduct;
@@ -18,7 +19,8 @@ class PosSalesController extends Controller
 {
     public function terminal(Request $request, Tenant $tenant)
     {
-        $branches = Branch::where('tenant_id',$tenant->id)->where('is_active',true)->orderBy('name')->get();
+        $allowed=app(PosBranchAccess::class)->ids($request->user(),$tenant);
+        $branches = Branch::where('tenant_id',$tenant->id)->whereIn('id',$allowed)->where('is_active',true)->orderBy('name')->get();
         $branch = $branches->firstWhere('id',(int)$request->query('branch_id')) ?? $branches->first();
         $products = PosProduct::where('tenant_id',$tenant->id)->where('is_active',true)
             ->when($request->filled('search'),function($q)use($request){
@@ -37,14 +39,16 @@ class PosSalesController extends Controller
 
     public function history(Request $request, Tenant $tenant)
     {
-        $sales = PosSale::where('tenant_id',$tenant->id)->with('items','payments')
+        $allowed=app(PosBranchAccess::class)->ids($request->user(),$tenant);
+        $sales = PosSale::where('tenant_id',$tenant->id)->whereIn('branch_id',$allowed)->with('items','payments')
             ->latest('id')->paginate(25);
         return view('business.pos.sales', compact('tenant','sales'));
     }
 
-    public function receipt(Tenant $tenant, PosSale $sale)
+    public function receipt(Request $request,Tenant $tenant, PosSale $sale)
     {
         abort_unless($sale->tenant_id===$tenant->id,404);
+        app(PosBranchAccess::class)->ensure($request->user(),$tenant,$sale->branch_id);
         $sale->load('items','payments');
         return view('business.pos.receipt', compact('tenant','sale'));
     }
@@ -69,6 +73,7 @@ class PosSalesController extends Controller
             $existing=PosSale::where('tenant_id',$tenant->id)->where('idempotency_key',$data['idempotency_key'])->first();
             if($existing){return $existing;}
             $branch=Branch::where('tenant_id',$tenant->id)->where('is_active',true)->findOrFail($data['branch_id']);
+            app(PosBranchAccess::class)->ensure($request->user(),$tenant,$branch->id);
             $shift=DB::table('pos_shifts as s')->join('pos_registers as r','r.id','=','s.register_id')
                 ->where('s.tenant_id',$tenant->id)->where('s.id',$data['shift_id'])
                 ->where('s.user_id',$request->user()->id)->where('r.branch_id',$branch->id)
@@ -96,6 +101,9 @@ class PosSalesController extends Controller
                     throw ValidationException::withMessages(['items'=>'Sale amount exceeds permitted range.']);
                 }
                 $subtotal+=$price*$qty;
+                if ($subtotal > 100000000) {
+                    throw ValidationException::withMessages(['items'=>'Maximum supported sale amount is 1,000,000 currency units.']);
+                }
             }
             if ($subtotal > 100000000) {
                 throw ValidationException::withMessages(['items'=>'Maximum supported sale amount is 1,000,000 currency units. Split the sale.']);
