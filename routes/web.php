@@ -35,6 +35,10 @@ use App\Http\Controllers\Platform\StoreDeviceController;
 use App\Http\Controllers\Platform\GlobalTenantUserController;
 use App\Http\Controllers\Platform\PaymentsController;
 use App\Http\Controllers\Platform\PaymentReviewController;
+use App\Http\Controllers\Platform\BillingInvoiceController;
+use App\Http\Controllers\Platform\BillingCouponController;
+use App\Http\Controllers\Platform\BillingOperationsController;
+use App\Http\Controllers\Business\BillingController as BusinessBillingController;
 use App\Http\Controllers\Platform\PaymentSettingsController;
 use App\Http\Controllers\Business\SubscriptionPaymentController as BusinessPaymentController;
 use App\Http\Controllers\PlatformUserInvitationController;
@@ -125,6 +129,16 @@ Route::middleware(['auth', 'verified', 'account.ready'])->group(function (): voi
         ->middleware('tenant.member')->group(function (): void {
             Route::get('/dashboard', [BusinessDashboardController::class, 'index'])->name('dashboard');
             Route::get('/subscription', [BusinessSubscriptionController::class, 'index'])->name('subscription.index');
+            Route::get('/billing', [BusinessBillingController::class, 'index'])
+                ->middleware('tenant.permission:settings.manage')->name('billing.index');
+            Route::get('/billing/invoices/{invoice}', [BusinessBillingController::class, 'show'])
+                ->middleware('tenant.permission:settings.manage')->name('billing.show');
+            Route::get('/billing/invoices/{invoice}/pdf', [BusinessBillingController::class, 'pdf'])
+                ->middleware('tenant.permission:settings.manage')->name('billing.pdf');
+            Route::get('/billing/credit-notes/{refund}/pdf', [BusinessBillingController::class, 'creditNote'])
+                ->middleware('tenant.permission:settings.manage')->name('billing.credit-note');
+            Route::put('/billing/renewal', [BusinessBillingController::class, 'renewal'])
+                ->middleware(['tenant.permission:settings.manage','throttle:5,1'])->name('billing.renewal');
             Route::get('/logo', [TenantLogoController::class, 'show'])->name('logo.show');
             Route::get('/notifications', [NotificationInboxController::class, 'business'])
                 ->name('notifications.index');
@@ -260,6 +274,29 @@ Route::middleware(['auth', 'verified', 'account.ready'])->group(function (): voi
                 Route::put('/modules/{module}', [ModuleController::class, 'update'])->name('modules.update');
                 Route::get('/subscriptions', [SubscriptionRegistryController::class, 'index'])->name('subscriptions.index');
                 Route::get('/payment-setup', [PaymentsController::class, 'index'])->name('payments.index');
+                Route::get('/billing/invoices', [BillingInvoiceController::class, 'index'])->name('billing.invoices.index');
+                Route::get('/billing/invoices/{invoice}', [BillingInvoiceController::class, 'show'])->name('billing.invoices.show');
+                Route::get('/billing/invoices/{invoice}/pdf', [BillingInvoiceController::class, 'pdf'])->name('billing.invoices.pdf');
+                Route::get('/billing/coupons', [BillingCouponController::class, 'index'])->name('billing.coupons.index');
+                Route::get('/billing/settings', [BillingOperationsController::class, 'settings'])->name('billing.settings.index');
+                Route::get('/billing/reports', [BillingOperationsController::class, 'report'])->name('billing.reports.index');
+                Route::get('/billing/reports/export', [BillingOperationsController::class, 'export'])->name('billing.reports.export');
+                Route::get('/billing/credit-notes/{refund}/pdf', [BillingInvoiceController::class, 'creditNote'])
+                    ->name('billing.credit-note');
+                Route::middleware('platform.billing_review')->group(function (): void {
+                    Route::post('/billing/invoices/{invoice}/refund', [BillingInvoiceController::class, 'refund'])
+                        ->middleware('throttle:5,1')->name('billing.invoices.refund');
+                    Route::post('/billing/invoices/{invoice}/resend', [BillingInvoiceController::class, 'resend'])
+                        ->middleware('throttle:5,1')->name('billing.invoices.resend');
+                    Route::post('/billing/coupons', [BillingCouponController::class, 'store'])
+                        ->name('billing.coupons.store');
+                    Route::patch('/billing/coupons/{coupon}', [BillingCouponController::class, 'update'])
+                        ->name('billing.coupons.update');
+                    Route::put('/billing/settings', [BillingOperationsController::class, 'updateSettings'])
+                        ->name('billing.settings.update');
+                    Route::post('/billing/subscriptions/{tenant:slug}/extend', [BillingOperationsController::class, 'extend'])
+                        ->name('billing.subscriptions.extend');
+                });
                 Route::get('/payment-requests', [PaymentReviewController::class, 'index'])->name('payments.review.index');
                 Route::get('/payment-requests/{payment}', [PaymentReviewController::class, 'show'])->name('payments.review.show');
                 Route::get('/payment-requests/{payment}/evidence', [PaymentReviewController::class, 'receipt'])->name('payments.review.receipt');

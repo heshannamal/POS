@@ -87,6 +87,14 @@ class SubscriptionPaymentController extends Controller
                 ]);
 
                 $invoice = app(BillingInvoicing::class)->createForSubmission($tenant, $payment, $plan, $quote);
+                AuditLog::create([
+                    'tenant_id'=>$tenant->id,'actor_id'=>$request->user()->id,
+                    'action'=>'billing.invoice.created',
+                    'subject_type'=>\App\Models\BillingInvoice::class,
+                    'subject_id'=>$invoice->id,
+                    'metadata'=>['total_minor'=>$invoice->total_minor,'currency'=>$invoice->currency],
+                    'ip_address'=>$request->ip(),
+                ]);
 
                 AuditLog::create([
                     'tenant_id' => $tenant->id, 'actor_id' => $request->user()->id,

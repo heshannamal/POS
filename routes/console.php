@@ -97,3 +97,6 @@ Artisan::command('platform:temporary-login {--hours=24}', function (): int {
 
 // A cron job must run `php artisan schedule:run` every minute for reminders.
 \Illuminate\Support\Facades\Schedule::command('communications:send-reminders')->dailyAt('09:00')->withoutOverlapping();
+
+// Safe: no automatic card/bank charging. Keeps ended paid periods correctly classified.
+\Illuminate\Support\Facades\Schedule::command('billing:maintain')->dailyAt('00:15')->withoutOverlapping();

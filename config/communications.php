@@ -10,6 +10,16 @@ return [
             'variables' => ['platform_name','business_name','owner_name','owner_email','business_url'],
             'to_owner' => true, 'to_platform' => true, 'platform_roles' => ['super_admin','operations'],
         ],
+        'billing.invoice_issued' => [
+            'name' => 'Subscription invoice issued',
+            'variables' => ['platform_name','business_name','invoice_number','invoice_amount','currency','invoice_url'],
+            'to_owner'=>true,
+        ],
+        'billing.refund_recorded' => [
+            'name' => 'Refund verified / credit note',
+            'variables' => ['platform_name','business_name','invoice_number','invoice_amount','currency','invoice_url'],
+            'to_owner'=>true,
+        ],
         'payment.submitted' => [
             'name' => 'Payment submitted for review',
             'variables' => ['platform_name','business_name','payment_id','payment_amount','currency','payment_url'],

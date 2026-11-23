@@ -24,6 +24,8 @@ class CommunicationCenter
     {
         $map = [
             'tenant.created' => 'business.created',
+            'billing.invoice.created' => 'billing.invoice_issued',
+            'billing.refund.recorded' => 'billing.refund_recorded',
             'subscription.payment.submitted' => 'payment.submitted',
             'subscription.payment.approved' => 'payment.approved',
             'subscription.payment.rejected' => 'payment.rejected',
@@ -52,6 +54,18 @@ class CommunicationCenter
             'ticket_url' => route('business.support.index', $tenant),
             'trial_end_date' => $tenant->trial?->ends_at?->format('Y-m-d') ?? '',
         ];
+        if (str_starts_with($event, 'billing.') && $audit->subject_id) {
+            $invoiceId = $event === 'billing.refund_recorded'
+                ? (int) ($audit->metadata['invoice_id'] ?? 0)
+                : $audit->subject_id;
+            $invoice = \App\Models\BillingInvoice::find($invoiceId);
+            if ($invoice && $invoice->tenant_id === $tenant->id) {
+                $variables['invoice_number'] = $invoice->number;
+                $variables['invoice_amount'] = \App\Services\BillingMoney::format($invoice->total_minor);
+                $variables['currency'] = $invoice->currency;
+                $variables['invoice_url'] = route('business.billing.show',[$tenant,$invoice]);
+            }
+        }
         if (str_starts_with($event, 'payment.') && $audit->subject_id) {
             $payment = SubscriptionPaymentRequest::find($audit->subject_id);
             if ($payment && $payment->tenant_id === $tenant->id) {
@@ -192,6 +206,7 @@ class CommunicationCenter
     private function actionUrl(string $event, ?Tenant $tenant, array $vars): ?string
     {
         return match ($event) {
+            'billing.invoice_issued','billing.refund_recorded' => $vars['invoice_url'] ?? null,
             'payment.submitted', 'payment.approved', 'payment.rejected' => $vars['payment_url'] ?? null,
             'support.opened', 'support.replied', 'support.customer_replied' => $vars['ticket_url'] ?? null,
             'security.alert' => route('platform.security.index'),

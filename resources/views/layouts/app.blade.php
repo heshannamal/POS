@@ -23,6 +23,10 @@
         ['label' => 'Subscriptions', 'icon' => '▤', 'route' => 'platform.subscriptions.index', 'active' => 'platform.subscriptions.*', 'access' => ['billing']],
         ['label' => 'Payment Setup', 'icon' => '▣', 'route' => 'platform.payments.index', 'active' => 'platform.payments.index', 'access' => ['billing']],
         ['label' => 'Payment Reviews', 'icon' => '◷', 'route' => 'platform.payments.review.index', 'active' => 'platform.payments.review.*', 'access' => ['billing']],
+        ['label' => 'Billing Invoices', 'icon' => '▤', 'route' => 'platform.billing.invoices.index', 'active' => 'platform.billing.invoices.*', 'access' => ['billing']],
+        ['label' => 'Coupons', 'icon' => '◈', 'route' => 'platform.billing.coupons.index', 'active' => 'platform.billing.coupons.*', 'access' => ['billing']],
+        ['label' => 'Billing Reports', 'icon' => '▥', 'route' => 'platform.billing.reports.index', 'active' => 'platform.billing.reports.*', 'access' => ['billing']],
+        ['label' => 'Billing Settings', 'icon' => '⚙', 'route' => 'platform.billing.settings.index', 'active' => 'platform.billing.settings.*', 'access' => ['billing']],
         ['label' => 'Plans', 'icon' => '◈', 'route' => 'platform.plans.index', 'active' => 'platform.plans.*', 'access' => ['billing']],
         ['label' => 'Modules', 'icon' => '◇', 'route' => 'platform.modules.index', 'active' => 'platform.modules.*', 'access' => ['billing']],
         ['label' => 'Reports', 'icon' => '▥', 'route' => 'platform.reports.index', 'active' => 'platform.reports.*', 'access' => ['auditor','operations','billing']],
@@ -48,6 +52,7 @@
         ['label' => 'Subscription', 'icon' => '▥', 'route' => 'business.subscription.index', 'active' => 'business.subscription.*'],
         ['label' => 'Support', 'icon' => '✉', 'route' => 'business.support.index', 'active' => 'business.support.*', 'can' => 'settings.manage'],
         ['label' => 'Notifications', 'icon' => '◉', 'route' => 'business.notifications.index', 'active' => 'business.notifications.*'],
+        ['label' => 'Invoices & Billing', 'icon' => '▤', 'route' => 'business.billing.index', 'active' => 'business.billing.*', 'can' => 'settings.manage'],
         ['label' => 'Reports', 'icon' => '▨', 'route' => null],
     ];
 @endphp

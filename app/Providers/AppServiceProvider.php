@@ -33,7 +33,8 @@ class AppServiceProvider extends ServiceProvider
             if ($audit->action === 'support.ticket.replied'
                 && ($audit->metadata['internal_note'] ?? false)) return;
             if (! in_array($audit->action, [
-                'tenant.created','subscription.payment.submitted',
+                'tenant.created','billing.invoice.created','billing.refund.recorded',
+                'subscription.payment.submitted',
                 'subscription.payment.approved','subscription.payment.rejected',
                 'support.ticket.created','support.ticket.replied',
                 'support.customer.replied','employee.invited',

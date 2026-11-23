@@ -81,6 +81,11 @@ class PlatformAccess
         if (str_starts_with($name, 'platform.stores.')) return $view ? 'stores.view' : 'stores.manage';
         if (str_starts_with($name, 'platform.users.') || str_starts_with($name, 'platform.tenant-users.')) return $view ? 'users.view' : 'users.manage';
         if (str_starts_with($name, 'platform.trials.')) return $view ? 'trials.view' : 'trials.manage';
+        if (str_starts_with($name, 'platform.billing.')) {
+            // Financial mutation routes are separately guarded by
+            // platform.billing_review (permanent Super/Billing admins).
+            return $view ? 'billing.view' : 'billing.manage';
+        }
         if (str_starts_with($name, 'platform.plans.') || str_starts_with($name, 'platform.modules.')
             || str_starts_with($name, 'platform.subscriptions.')
             || str_starts_with($name, 'platform.payments.')) {
@@ -115,7 +120,7 @@ class PlatformAccess
             'stores' => 'stores.view',
             'users', 'tenant-users' => 'users.view',
             'trials' => 'trials.view',
-            'plans', 'modules', 'payments', 'subscriptions' => 'billing.view',
+            'plans', 'modules', 'payments', 'subscriptions', 'billing' => 'billing.view',
             'reports' => 'reports.view',
             'audit' => 'audit.view',
             'support', 'announcements' => 'support.view',
