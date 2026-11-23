@@ -17,7 +17,7 @@
 
 Staff access is also limited to the specific branches in the existing `branch_user` assignment table; owners can access their tenant's branches. The platform's Store Management screen handles staff branch assignments. Mutation routes require an active subscription/trial and are blocked for suspended or expired tenants (shift close remains available for reconciliation).
 
-Permissions are deliberately **not automatically granted to existing staff roles**. Business owners can assign them in Roles & Permissions. Cashiers must be assigned BOTH `pos.sales` and `pos.register.manage` to open their shift and sell. A manager allowed to issue returns must have `pos.returns.manage`, plus an own open shift for the sale's branch; user-owner can close/adjust another cashier's shift.
+Permissions are deliberately **not automatically granted to existing staff roles**. Business owners can assign them in Roles & Permissions. Cashiers must be assigned BOTH `pos.sales` and `pos.shifts.operate` to open their shift and sell. A manager allowed to issue returns must have `pos.returns.manage`, plus an own open shift for the sale's branch; user-owner can close/adjust another cashier's shift.
 
 ## Safe upgrade
 
