@@ -57,3 +57,7 @@ See [Global Stores, tenant staff, device registry, login audit, session revocati
 ## Advanced Platform Security
 
 [Authenticator 2FA, recovery codes, revocable sessions, login alerts, and least-privilege roles](docs/ADVANCED-PLATFORM-SECURITY.md). The production policy requires 2FA for permanent Super Admins. Keep APP_KEY safe, as it encrypts TOTP secrets.
+
+## Phase 5 — Communication Center
+
+See [Phase 5 Communication Center](docs/PHASE5-COMMUNICATION-CENTER.md) for editable event templates, recipient rules, encrypted delivery logs, test-mode SMTP safeguards, notification inbox, queue worker and scheduled reminders. Outbound email is disabled until enabled by the platform administrator.
