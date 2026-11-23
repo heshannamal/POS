@@ -22,6 +22,7 @@ class Phase9ApiRoutesTest extends TestCase
             'api.v1.tenants.sales',
             'api.v1.tenants.sales.show',
             'api.v1.tenants.sync.stock',
+            'api.v1.tenants.sync.manifest',
             'api.v1.tenants.sales.store',
             'api.v1.tenants.shifts.index',
             'api.v1.tenants.shifts.open',
