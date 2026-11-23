@@ -101,7 +101,7 @@ class PosSalesController extends Controller
                 $stock->decrement('quantity',$qty);
                 DB::table('pos_stock_movements')->insert([
                     'tenant_id'=>$tenant->id,'branch_id'=>$branch->id,'product_id'=>$id,
-                    'actor_id'=>$request->user()->id,'change'=>-$qty,'balance_after'=>$stock->quantity-$qty,
+                    'actor_id'=>$request->user()->id,'change'=>-$qty,'balance_after'=>$stock->fresh()->quantity,
                     'reason'=>'sale','reference'=>$data['idempotency_key'],'created_at'=>now(),
                 ]);
             }
