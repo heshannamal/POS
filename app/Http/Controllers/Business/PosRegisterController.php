@@ -143,6 +143,8 @@ class PosRegisterController extends Controller
             $row=DB::table('pos_shifts')->where('tenant_id',$tenant->id)->where('id',$shift)
                 ->whereNull('closed_at')->lockForUpdate()->first();
             abort_unless($row,404);
+            $registerBranch=(int)DB::table('pos_registers')->where('tenant_id',$tenant->id)->where('id',$row->register_id)->value('branch_id');
+            app(PosBranchAccess::class)->ensure($request->user(),$tenant,$registerBranch);
             abort_unless((int)$row->user_id===$request->user()->id || $request->user()->isOwnerOf($tenant),403);
             $expected=$accounting->expected($shift,$row->opening_cash_minor);
             DB::table('pos_shifts')->where('id',$shift)->update([
