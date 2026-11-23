@@ -40,7 +40,8 @@ class CommunicationTemplateRenderer
 
     public function validateVariables(string $content, string $event): array
     {
-        $allowed = (config('communications.events', [])[$event]['variables'] ?? []);
+        $allowed = (config('communications.events', [])[$event]['variables']
+            ?? (str_starts_with($event, 'custom.') ? config('communications.custom_variables', []) : []));
         preg_match_all('/\{\{\s*([a-z][a-z0-9_]*)\s*\}\}/', $content, $matches);
         return array_values(array_diff(array_unique($matches[1]), $allowed));
     }

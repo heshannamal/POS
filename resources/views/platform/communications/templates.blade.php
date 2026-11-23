@@ -5,6 +5,7 @@
 <div class="page-head">
     <div><span class="overline">COMMUNICATION CENTER</span><h1>Email template library</h1><p class="muted">Edit platform messages, placeholders and delivery behavior without changing application source code.</p></div>
     <div class="page-actions">
+        <a class="btn btn-primary" href="{{ route('platform.communications.templates.create') }}">＋ Custom template</a>
         <a class="btn btn-outline" href="{{ route('platform.communications.rules.index') }}">Recipient rules</a>
         <a class="btn btn-secondary" href="{{ route('platform.communications.deliveries.index') }}">Delivery history</a>
     </div>
@@ -17,7 +18,7 @@
             @foreach($templates as $template)
                 @php $rule=$rules->get($template->event_key); @endphp
                 <tr>
-                    <td><strong>{{ $template->name }}</strong><small class="table-subtext">{{ $template->event_key }}</small></td>
+                    <td><strong>{{ $template->name }}</strong><small class="table-subtext">{{ $template->event_key }}</small>@if(str_starts_with($template->event_key,'custom.'))<small class="table-subtext">Manual draft · no event trigger</small>@endif</td>
                     <td><small class="table-subtext">{{ implode(', ', $template->allowed_variables ?? []) }}</small></td>
                     <td><span class="status status-{{ $template->is_active?'active':'suspended' }}">{{ $template->is_active?'Active':'Inactive' }}</span></td>
                     <td>{{ $rule?->send_in_app ? 'Enabled':'Off' }}</td>

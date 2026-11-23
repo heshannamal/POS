@@ -3,6 +3,7 @@
 // The variables here are the only placeholders administrators may use
 // in editable templates. They are data: never execute template text as PHP.
 return [
+    'custom_variables' => ['platform_name','business_name','owner_name','user_name','user_email','custom_link'],
     'events' => [
         'business.created' => [
             'name' => 'New business registered',

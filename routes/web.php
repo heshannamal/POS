@@ -315,6 +315,8 @@ Route::middleware(['auth', 'verified', 'account.ready'])->group(function (): voi
                 Route::patch('/administrators/{administrator}', [AdminTeamController::class, 'update'])
                     ->middleware('throttle:5,1')->name('admins.update');
                 Route::get('/communications/templates', [CommunicationController::class, 'templates'])->name('communications.templates.index');
+                Route::get('/communications/templates/create', [CommunicationController::class, 'create'])->name('communications.templates.create');
+                Route::post('/communications/templates', [CommunicationController::class, 'store'])->name('communications.templates.store');
                 Route::get('/communications/templates/{template}/edit', [CommunicationController::class, 'edit'])->name('communications.templates.edit');
                 Route::put('/communications/templates/{template}', [CommunicationController::class, 'update'])->name('communications.templates.update');
                 Route::post('/communications/templates/preview', [CommunicationController::class, 'preview'])

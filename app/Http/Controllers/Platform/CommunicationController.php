@@ -27,17 +27,62 @@ class CommunicationController extends Controller
         return view('platform.communications.templates', compact('templates','rules'));
     }
 
+    public function create(): View
+    {
+        return view('platform.communications.create');
+    }
+
+    public function store(Request $request, CommunicationTemplateRenderer $renderer): RedirectResponse
+    {
+        $data = $request->validate([
+            'slug' => ['required','string','min:2','max:55','regex:/^[a-z][a-z0-9_-]+$/'],
+            'name' => ['required','string','max:120'],
+            'subject' => ['required','string','max:255'],
+            'body_markdown' => ['required','string','max:30000'],
+        ]);
+        $event = 'custom.'.$data['slug'];
+        if (CommunicationTemplate::where('event_key',$event)->exists()) {
+            throw ValidationException::withMessages(['slug'=>'A custom template with this identifier already exists.']);
+        }
+        $invalid = $renderer->validateVariables($data['subject']."\n".$data['body_markdown'], $event);
+        if ($invalid) {
+            throw ValidationException::withMessages(['body_markdown'=>'Unknown variables: '.implode(', ',$invalid)]);
+        }
+
+        $template = DB::transaction(function () use ($request,$data,$event): CommunicationTemplate {
+            $template = CommunicationTemplate::create([
+                'event_key'=>$event,
+                'name'=>$data['name'],
+                'subject'=>$data['subject'],
+                'body_markdown'=>$data['body_markdown'],
+                'allowed_variables'=>config('communications.custom_variables',[]),
+                'is_active'=>true,
+                'updated_by'=>$request->user()->id,
+            ]);
+            AuditLog::create([
+                'actor_id'=>$request->user()->id,
+                'action'=>'communication.template.created',
+                'subject_type'=>CommunicationTemplate::class, 'subject_id'=>$template->id,
+                'metadata'=>['event'=>$event, 'type'=>'manual_draft'],
+                'ip_address'=>$request->ip(),
+            ]);
+            return $template;
+        });
+
+        return redirect()->route('platform.communications.templates.edit',$template)
+            ->with('status','Custom template saved as a draft. It has no automatic recipient trigger.');
+    }
+
     public function edit(CommunicationTemplate $template): View
     {
-        abort_unless(isset(config('communications.events')[$template->event_key]), 404);
-        $rule = CommunicationRule::where('event_key',$template->event_key)->firstOrFail();
+        $rule = CommunicationRule::where('event_key',$template->event_key)->first();
         return view('platform.communications.edit', compact('template','rule'));
     }
 
     public function update(Request $request, CommunicationTemplate $template, CommunicationTemplateRenderer $renderer): RedirectResponse
     {
         $event = $template->event_key;
-        abort_unless(isset(config('communications.events')[$event]), 404);
+        abort_unless(isset(config('communications.events',[])[$event]) || str_starts_with($event,'custom.'),404);
         $data = $request->validate([
             'name' => ['required','string','max:120'],
             'subject' => ['required','string','max:255'],
@@ -74,11 +119,15 @@ class CommunicationController extends Controller
     public function preview(Request $request, CommunicationTemplateRenderer $renderer): View
     {
         $data = $request->validate([
-            'event_key' => ['required', Rule::in(array_keys(config('communications.events', [])))],
+            'event_key' => ['required', 'string', 'max:80'],
             'subject' => ['required','string','max:255'],
             'body_markdown' => ['required','string','max:30000'],
         ]);
-        $invalid = $renderer->validateVariables($data['subject']."\n".$data['body_markdown'],$data['event_key']);
+        $event = $data['event_key'];
+        abort_unless(isset(config('communications.events',[])[$event])
+            || $event === 'custom.preview'
+            || CommunicationTemplate::where('event_key',$event)->where('event_key','like','custom.%')->exists(),404);
+        $invalid = $renderer->validateVariables($data['subject']."\n".$data['body_markdown'],$event);
         if ($invalid) {
             throw ValidationException::withMessages(['body_markdown'=>'Unknown variables: '.implode(',',$invalid)]);
         }
