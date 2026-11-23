@@ -81,3 +81,6 @@ Initial [product catalog, branch inventory, cash sales terminal and receipts](do
 ## Phase 9 — Shared API v1
 
 A [versioned Laravel Sanctum device API](docs/PHASE9-SHARED-API.md) is provided for future POS desktop/mobile clients. It includes tenant-bound device tokens, revocation, assigned-store read endpoints, stock delta feeds, and **one shared checkout service** for web and API. No customer booking, offline sales, or full desktop/mobile application has been delivered by this phase. Local `composer update laravel/sanctum --with-all-dependencies`, migrations, tests, and deployment verification are still required before use.
+
+### Phase 9.6 — Stabilization and desktop groundwork
+[Shared cashier shift service and API, browser device management, strict checkout retry fingerprints, and online-only sync manifest](docs/PHASE9-6-API-STABILIZATION.md). Targeted CI tests run separately from the still-failing legacy suite. Do not deploy before a full regression and transaction concurrency review.
