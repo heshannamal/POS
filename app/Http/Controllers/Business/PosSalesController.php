@@ -27,7 +27,12 @@ class PosSalesController extends Controller
                     ->orWhere('sku','like',"%{$term}%")->orWhere('barcode','like',"%{$term}%"));
             })->with(['stocks'=>fn($q)=>$branch?$q->where('branch_id',$branch->id):$q->whereRaw('1=0')])
             ->orderBy('name')->limit(100)->get();
-        return view('business.pos.terminal', compact('tenant','branches','branch','products'));
+        $openShift = $branch ? DB::table('pos_shifts as s')
+            ->join('pos_registers as r','r.id','=','s.register_id')
+            ->where('s.tenant_id',$tenant->id)->where('r.branch_id',$branch->id)
+            ->where('s.user_id',$request->user()->id)->whereNull('s.closed_at')
+            ->select('s.id','r.name as register_name')->first() : null;
+        return view('business.pos.terminal', compact('tenant','branches','branch','products','openShift'));
     }
 
     public function history(Request $request, Tenant $tenant)
@@ -49,6 +54,7 @@ class PosSalesController extends Controller
         $data=$request->validate([
             'idempotency_key'=>'required|uuid',
             'branch_id'=>['required','integer',Rule::exists('branches','id')->where('tenant_id',$tenant->id)->where('is_active',true)],
+            'shift_id'=>['required','integer',Rule::exists('pos_shifts','id')->where('tenant_id',$tenant->id)->where('user_id',$request->user()->id)->whereNull('closed_at')],
             'items'=>'required|array|min:1|max:100',
             'items.*.product_id'=>['required','integer',Rule::exists('pos_products','id')->where('tenant_id',$tenant->id)->whereNull('deleted_at')],
             'items.*.quantity'=>'required|integer|min:1|max:10000',
@@ -62,7 +68,14 @@ class PosSalesController extends Controller
             Tenant::whereKey($tenant->id)->lockForUpdate()->firstOrFail();
             $existing=PosSale::where('tenant_id',$tenant->id)->where('idempotency_key',$data['idempotency_key'])->first();
             if($existing){return $existing;}
-            $branch=Branch::where('tenant_id',$tenant->id)->findOrFail($data['branch_id']);
+            $branch=Branch::where('tenant_id',$tenant->id)->where('is_active',true)->findOrFail($data['branch_id']);
+            $shift=DB::table('pos_shifts as s')->join('pos_registers as r','r.id','=','s.register_id')
+                ->where('s.tenant_id',$tenant->id)->where('s.id',$data['shift_id'])
+                ->where('s.user_id',$request->user()->id)->where('r.branch_id',$branch->id)
+                ->where('r.is_active',true)->whereNull('s.closed_at')->select('s.id')->first();
+            if (!$shift) {
+                throw ValidationException::withMessages(['shift_id'=>'Open your cashier shift for this branch before selling.']);
+            }
             $quantities=[];
             foreach($data['items'] as $item){
                 $id=(int)$item['product_id'];
@@ -84,6 +97,9 @@ class PosSalesController extends Controller
                 }
                 $subtotal+=$price*$qty;
             }
+            if ($subtotal > 100000000) {
+                throw ValidationException::withMessages(['items'=>'Maximum supported sale amount is 1,000,000 currency units. Split the sale.']);
+            }
             $discount=(int)($data['discount_minor']??0);
             if($discount>$subtotal){throw ValidationException::withMessages(['discount_minor'=>'Discount exceeds subtotal.']);}
             foreach($quantities as $id=>$qty){
@@ -103,7 +119,7 @@ class PosSalesController extends Controller
                 ]);
             }
             $sale=PosSale::create([
-                'tenant_id'=>$tenant->id,'branch_id'=>$branch->id,'cashier_id'=>$request->user()->id,
+                'tenant_id'=>$tenant->id,'branch_id'=>$branch->id,'shift_id'=>$shift->id,'cashier_id'=>$request->user()->id,
                 'idempotency_key'=>$data['idempotency_key'],'status'=>'completed',
                 'subtotal_minor'=>$subtotal,'discount_minor'=>$discount,'total_minor'=>$subtotal-$discount,
                 'currency'=>$tenant->currency,'completed_at'=>now(),
@@ -111,14 +127,14 @@ class PosSalesController extends Controller
             foreach($quantities as $id=>$qty){
                 $product=$products[$id];
                 $sale->items()->create(['product_id'=>$id,'name'=>$product->name,'sku'=>$product->sku,
-                    'quantity'=>$qty,'unit_price_minor'=>$product->price_minor,
+                    'quantity'=>$qty,'unit_price_minor'=>$product->price_minor,'unit_cost_minor'=>$product->cost_minor,
                     'line_total_minor'=>$product->price_minor*$qty]);
             }
             $sale->payments()->create(['method'=>$data['payment_method'],
                 'amount_minor'=>$subtotal-$discount,'reference'=>$data['payment_reference']??null]);
             AuditLog::create(['tenant_id'=>$tenant->id,'actor_id'=>$request->user()->id,
                 'action'=>'pos.sale.completed','subject_type'=>PosSale::class,'subject_id'=>$sale->id,
-                'metadata'=>['branch_id'=>$branch->id,'total_minor'=>$subtotal-$discount],
+                'metadata'=>['branch_id'=>$branch->id,'shift_id'=>$shift->id,'total_minor'=>$subtotal-$discount],
                 'ip_address'=>$request->ip()]);
             return $sale;
         },3);
