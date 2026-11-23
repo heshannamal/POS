@@ -38,6 +38,20 @@ class SendCommunicationDelivery implements ShouldQueue
             return;
         }
 
+        // A later switch to test mode must never release previously queued
+        // production-recipient mail. Apply the current allowlist at send time.
+        if (PlatformSetting::valueFor('communications.test_mode', '1') === '1') {
+            $allowed = array_filter(array_map('trim', explode(',',
+                PlatformSetting::valueFor('communications.test_recipients', ''))));
+            if (! in_array($delivery->recipient_email, $allowed, true)) {
+                $delivery->update([
+                    'status' => 'skipped',
+                    'last_error' => 'Recipient is outside the current test allowlist',
+                ]);
+                return;
+            }
+        }
+
         $changed = CommunicationDelivery::whereKey($delivery->id)
             ->whereIn('status', ['queued', 'retrying'])
             ->update(['status' => 'sending', 'attempts' => $delivery->attempts + 1]);
