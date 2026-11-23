@@ -9,14 +9,13 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Models\UserNotification;
 use App\Services\CreateTenant;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
+use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Tests\TestCase;
 
 class CommunicationIntegrationTest extends TestCase
 {
-    // Migrate rather than wrapping test in a transaction. This exercises
-    // the actual afterCommit event observer behavior.
-    use DatabaseMigrations;
+    // Avoid rollback of legacy SQLite indexed columns; test true commits.
+    use DatabaseTruncation;
 
     public function test_tenant_provisioning_creates_post_commit_notifications_with_email_off(): void
     {
