@@ -21,8 +21,8 @@ class AdminSessionsController extends Controller
         ]);
         $sessions = UserSecuritySession::with('user:id,name,email')
             ->when($filters['search'] ?? null, fn ($q, $s) =>
-                $q->where('ip_address', 'like', '%'.$s.'%')
-                    ->orWhereHas('user', fn ($user) => $user->where('email', 'like', '%'.$s.'%')))
+                $q->where(fn ($search) => $search->where('ip_address', 'like', '%'.$s.'%')
+                    ->orWhereHas('user', fn ($user) => $user->where('email', 'like', '%'.$s.'%'))))
             ->when($filters['status'] ?? null, fn ($q, $v) =>
                 $v === 'active' ? $q->whereNull('revoked_at') : $q->whereNotNull('revoked_at'))
             ->latest('last_seen_at')->paginate(25)->withQueryString();

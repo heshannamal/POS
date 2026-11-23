@@ -84,6 +84,13 @@ class TwoFactorController extends Controller
 
         $request->session()->forget('pending_two_factor_secret');
         $factor->markVerified($request);
+        $user->forceFill(['last_login_at' => now(), 'last_login_ip' => $request->ip()])->save();
+        \App\Models\LoginEvent::create([
+            'user_id' => $user->id, 'outcome' => 'success',
+            'email_hash' => hash('sha256', mb_strtolower($user->email)),
+            'ip_address' => $request->ip(),
+            'user_agent' => \Illuminate\Support\Str::limit((string) $request->userAgent(), 500, ''),
+        ]);
         $request->session()->flash('new_recovery_codes', $plain);
 
         return redirect()->route('security.recovery')
