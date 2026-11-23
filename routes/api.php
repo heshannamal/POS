@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\CheckoutController;
 use App\Http\Controllers\Api\V1\DeviceAuthController;
 use App\Http\Controllers\Api\V1\StoreDataController;
 use App\Http\Controllers\Api\V1\SyncController;
+use App\Http\Controllers\Api\V1\ShiftController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -33,12 +34,23 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
                 Route::get('/products',[StoreDataController::class,'products'])->name('products');
                 Route::get('/stock',[StoreDataController::class,'stock'])->name('stock');
                 Route::get('/registers',[StoreDataController::class,'registers'])->name('registers');
+
                 Route::get('/sales',[StoreDataController::class,'sales'])->name('sales');
                 Route::get('/sales/{sale}',[StoreDataController::class,'sale'])->name('sales.show');
                 Route::get('/sync/stock-movements',[SyncController::class,'stockMovements'])
                     ->name('sync.stock');
                 Route::post('/sales',[CheckoutController::class,'store'])
                     ->middleware(['pos.operational','throttle:30,1'])->name('sales.store');
+            });
+            Route::middleware('api.device:pos.shifts.operate')->group(function (): void {
+                Route::get('/shifts',[ShiftController::class,'index'])->name('shifts.index');
+                Route::post('/shifts',[ShiftController::class,'open'])
+                    ->middleware(['pos.operational','throttle:20,1'])->name('shifts.open');
+                Route::post('/shifts/{shift}/cash-movements',[ShiftController::class,'movement'])
+                    ->middleware(['pos.operational','throttle:30,1'])->name('shifts.movement');
+                // Closing remains available during subscription suspension to reconcile cash safely.
+                Route::post('/shifts/{shift}/close',[ShiftController::class,'close'])
+                    ->middleware('throttle:20,1')->name('shifts.close');
             });
         });
 });
