@@ -69,3 +69,7 @@ See [Phase 5 Communication Center](docs/PHASE5-COMMUNICATION-CENTER.md) for edit
 ## Phase 7 — POS operations foundation (partial)
 
 Initial [product catalog, branch inventory, cash sales terminal and receipts](docs/PHASE7-POS-FOUNDATION.md) are implemented. Advanced register shifts, refunds, retail taxes, barcode printer integrations and stock analytics are still pending. This is **not** a completed Phase 7. Apply incremental migrations after backing up your database.
+
+
+## Phase 7 cashier operations (new)
+[Register shifts, cash in/out, reconciliations, partial cash refunds, inventory reports, CSV and browser-based barcode/thermal printing](docs/PHASE7-OPERATIONS.md) are implemented in the codebase. Granular POS permissions must be explicitly granted to staff. Local migrations, automated tests and actual printer acceptance tests are still required before production deployment.
