@@ -28,7 +28,10 @@ class EnsureApiDevice
         abort_if($maxAge>0 && $user->password_changed_at &&
             $user->password_changed_at->lt(now()->subDays($maxAge)),403,'Password expired. Reset it using the web portal.');
         abort_unless($tenant->users()->whereKey($user->id)->wherePivot('status','active')->exists(),403);
-        abort_unless(in_array($tenant->effective_status,['active','trial'],true),403,
+        // Existing shifts may be reconciled during suspension; no new sales
+        // or cash movements are permitted because their routes require pos.operational.
+        $closingShift=$request->routeIs('api.v1.tenants.shifts.close');
+        abort_unless($closingShift || in_array($tenant->effective_status,['active','trial'],true),403,
             'The business is not active for device access.');
         abort_if($user->auth_revoked_at && $token->created_at->lessThanOrEqualTo($user->auth_revoked_at),
             401,'Account sessions were revoked.');
