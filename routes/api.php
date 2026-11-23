@@ -37,6 +37,8 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
 
                 Route::get('/sales',[StoreDataController::class,'sales'])->name('sales');
                 Route::get('/sales/{sale}',[StoreDataController::class,'sale'])->name('sales.show');
+                Route::get('/sync/manifest',[SyncController::class,'manifest'])
+                    ->name('sync.manifest');
                 Route::get('/sync/stock-movements',[SyncController::class,'stockMovements'])
                     ->name('sync.stock');
                 Route::post('/sales',[CheckoutController::class,'store'])
