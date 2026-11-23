@@ -51,7 +51,7 @@
         ['label' => 'Registers & Shifts', 'icon' => '▣', 'route' => 'business.pos.registers', 'active' => 'business.pos.registers*', 'can' => 'pos.shifts.operate'],
         ['label' => 'Returns', 'icon' => '↶', 'route' => 'business.pos.returns', 'active' => 'business.pos.returns*', 'can' => 'pos.returns.manage'],
         ['label' => 'Suppliers', 'icon' => '♧', 'route' => 'business.purchasing.suppliers', 'active' => 'business.purchasing.suppliers*', 'can' => 'pos.suppliers.manage'],
-        ['label' => 'Purchase Orders', 'icon' => '▤', 'route' => 'business.purchasing.orders', 'active' => 'business.purchasing.orders*', 'can' => 'pos.purchases.manage'],
+        ['label' => 'Purchase Orders', 'icon' => '▤', 'route' => 'business.purchasing.orders', 'active' => 'business.purchasing.orders*', 'canAny' => ['pos.purchases.manage','pos.receiving.manage','pos.payables.manage','pos.purchasing.reports']],
         ['label' => 'Stock Controls', 'icon' => '◷', 'route' => 'business.purchasing.stock', 'active' => 'business.purchasing.stock*', 'can' => 'pos.inventory.manage'],
         ['label' => 'Purchasing Reports', 'icon' => '▥', 'route' => 'business.purchasing.reports', 'active' => 'business.purchasing.reports*', 'can' => 'pos.purchasing.reports'],
         ['label' => 'Employees', 'icon' => '♙', 'route' => 'business.employees.index', 'active' => 'business.employees.*', 'can' => 'employees.view', 'feature' => 'staff.core'],
@@ -80,6 +80,10 @@
                         $visible = ($role === 'super_admin' || in_array($role, $item['access'], true)
                             || ($access->isCustom(auth()->user()) && $access->canViewNavigation(auth()->user(), $item['route'])))
                             && (!isset($item['permanent']) || ($role === 'super_admin' && auth()->user()->isPermanentPlatformAdmin()));
+                    }
+                    if (!$platform && isset($item['canAny'])) {
+                        $authorization = app(\App\Services\TenantAuthorization::class);
+                        $visible = collect($item['canAny'])->contains(fn ($permission) => $authorization->allows(auth()->user(), $tenant, $permission));
                     }
                     if (!$platform && isset($item['can'])) {
                         $authorization = app(\App\Services\TenantAuthorization::class);
