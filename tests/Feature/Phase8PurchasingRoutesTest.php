@@ -12,7 +12,7 @@ class Phase8PurchasingRoutesTest extends TestCase
         $expected=[
             'business.purchasing.suppliers'=>'tenant.permission:pos.suppliers.manage',
             'business.purchasing.suppliers.store'=>'tenant.permission:pos.suppliers.manage',
-            'business.purchasing.orders'=>'tenant.permission:pos.purchases.manage',
+            'business.purchasing.orders'=>'purchasing.view',
             'business.purchasing.orders.store'=>'tenant.permission:pos.purchases.manage',
             'business.purchasing.orders.approve'=>'tenant.permission:pos.purchases.manage',
             'business.purchasing.orders.cancel'=>'tenant.permission:pos.purchases.manage',
