@@ -2,9 +2,8 @@
 
 ## Screens
 
-- /security/setup — authenticator setup for platform admins
-- /security/challenge — verify a TOTP or single-use recovery code
-- /security/recovery — view newly generated codes once / regenerate codes
+- /security/challenge — enter a code delivered to the administrator email
+- POST /security/resend — request a replacement code (rate limited)
 - /security/sessions — personal sessions and password-confirmed revocation
 - /platform/security — login attempts, alerts and security KPIs
 - /platform/security/sessions — permanent Super Admin: all sessions
@@ -12,24 +11,52 @@
 - /platform/administrators — assign built-in and custom roles
 - /platform/audit — existing immutable audit trail and CSV export
 
-## Authenticator 2FA
+## Email-code 2FA (replaces authenticator TOTP)
 
-TOTP follows RFC 6238: HMAC-SHA1, 30-second steps and six digits. Common
-authenticator apps work using the manually displayed key or otpauth URI.
-The secret is encrypted using APP_KEY; never copy it into public QR services.
+When PLATFORM_REQUIRE_2FA=true, all platform administrators must enter a
+six-digit one-time code sent to their account email address after password
+authentication. A code expires in 10 minutes, is stored only as an HMAC,
+is single-use, and permits at most five incorrect attempts. Resends are
+rate limited to one per minute; generating a new code invalidates the old one.
+Session protection, login auditing and role restrictions remain in force.
 
-Enrollment requires your password and a valid authenticator code. Eight
-single-use recovery codes are generated, stored as password hashes and
-shown only once. Regenerate them using a valid authenticator code and
-password. Each code can be consumed only once.
+Do not use the `log` or `array` mail transport for real login codes:
+those transports do not deliver security codes to a mailbox. Administrator
+login fails closed if SMTP delivery errors.
 
-Once configured, an administrator cannot reach protected platform pages
-without completing 2FA. Permanent Super Admin accounts must enroll when
-PLATFORM_REQUIRE_2FA=true (production default); they cannot disable it
-while the policy is on. Existing admins are prompted to enroll on login
-instead of having their accounts deleted or their passwords replaced.
-Non-Super Admins may enroll voluntarily. Temporary local development
-admins retain their restricted access.
+The former authenticator setup, TOTP challenge and recovery-code pages
+are no longer accessible through application routes. Existing legacy TOTP
+columns remain untouched for safe data preservation and future migration
+cleanup; there is no live authenticator-based verification path.
+
+### cPanel mailbox on local WAMP
+
+Use **the settings reported by cPanel** for info@web7softwares.com:
+```dotenv
+APP_ENV=local
+APP_DEBUG=true
+APP_URL=http://localhost
+MAIL_MAILER=smtp
+MAIL_HOST=web7softwares.com
+MAIL_PORT=465
+MAIL_SCHEME=smtps
+MAIL_USERNAME=info@web7softwares.com
+MAIL_PASSWORD="REPLACE_WITH_NEW_MAILBOX_PASSWORD"
+MAIL_FROM_ADDRESS=info@web7softwares.com
+MAIL_FROM_NAME="POS Cloud"
+PLATFORM_REQUIRE_2FA=true
+```
+
+Keep one copy of each MAIL variable, never put the real password in a Git
+commit or a support message, and preserve existing APP_KEY and DB settings.
+The email recipient is the administrator's `users.email`, not automatically
+the SMTP sender mailbox. Check inbox and spam on the administrator address.
+If SSL certificates fail on WAMP, configure PHP CA certificates correctly:
+do not disable TLS verification.
+
+After backing up DB, run `php artisan migrate` and
+`php artisan optimize:clear`. Sign out and sign back in to trigger the
+new email-code challenge.
 
 ## Login security and sessions
 
@@ -80,13 +107,13 @@ Local environments can opt in to exercise the feature. The password-expiry
 value 0 disables age-based expiration; any positive number specifies days.
 
 Before deployment back up the populated MySQL database, private files and
-your APP_KEY. APP_KEY encrypts TOTP secrets; rotating it without a
-re-encryption plan makes stored secrets unreadable. Use HTTPS and reliable
+your APP_KEY. APP_KEY is used for application encryption and OTP HMAC; rotating it without a
+re-encryption plan can make existing encrypted data unreadable. Use HTTPS and reliable
 time synchronization (NTP).
 
 A sensible rollout: create two independent permanent Super Admin accounts,
-enroll both, securely save recovery codes, then enable production policy.
-Test one browser login and one session-revocation operation on staging.
+confirm each can receive SMTP email, then enable the policy.
+Test login, resend throttling and session revocation on staging.
 
 ## Safe local upgrade
 
