@@ -143,3 +143,64 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelector('#preview-body').value = editor.value;
     });
 });
+
+
+// Server-calculated subscription quote; no price, discount, or tax is trusted
+// from browser input when the payment proof is actually submitted.
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.querySelector('[data-billing-quote-url]');
+    const display = document.querySelector('#billing-quote');
+    if (!form || !display) return;
+
+    const endpoint = form.dataset.billingQuoteUrl;
+    const plan = form.querySelector('[name="plan_id"]');
+    const cycle = form.querySelector('[name="billing_cycle"]');
+    const coupon = form.querySelector('[name="coupon_code"]');
+    let sequence = 0;
+
+    const money = (minor, currency) => currency + ' ' + (minor / 100).toLocaleString(
+        undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+    );
+
+    async function refresh() {
+        const seq = ++sequence;
+        if (!plan?.value || !cycle?.value) {
+            display.textContent = 'Choose a plan and billing period.';
+            return;
+        }
+        const url = new URL(endpoint, window.location.href);
+        url.searchParams.set('plan_id', plan.value);
+        url.searchParams.set('billing_cycle', cycle.value);
+        if (coupon?.value.trim()) url.searchParams.set('coupon_code', coupon.value.trim());
+        display.textContent = 'Calculating exact invoice estimate…';
+        try {
+            const response = await fetch(url.toString(), {
+                headers: { Accept: 'application/json' }, credentials: 'same-origin'
+            });
+            if (!response.ok) {
+                const data = await response.json().catch(() => ({}));
+                throw new Error(data?.message || 'Selected plan or coupon is unavailable.');
+            }
+            const data = await response.json();
+            if (seq !== sequence) return;
+            display.textContent = [
+                'Plan: ' + money(data.list_price_minor, data.currency),
+                'Plan discount: −' + money(data.plan_discount_minor, data.currency),
+                'Coupon: −' + money(data.coupon_discount_minor, data.currency),
+                'Tax: ' + money(data.tax_minor, data.currency),
+                'TOTAL PAYABLE: ' + money(data.total_minor, data.currency),
+                data.note
+            ].join('  ·  ');
+            display.dataset.quoteValid = '1';
+        } catch (error) {
+            if (seq !== sequence) return;
+            display.textContent = error.message || 'Unable to calculate invoice. Verify plan and coupon.';
+            display.dataset.quoteValid = '0';
+        }
+    }
+    plan?.addEventListener('change', refresh);
+    cycle?.addEventListener('change', refresh);
+    coupon?.addEventListener('change', refresh);
+    coupon?.addEventListener('blur', refresh);
+    refresh();
+});

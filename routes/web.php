@@ -148,6 +148,8 @@ Route::middleware(['auth', 'verified', 'account.ready'])->group(function (): voi
                 ->name('notifications.read-all');
             Route::put('/notifications/preferences', [NotificationInboxController::class, 'preferencesBusiness'])
                 ->name('notifications.preferences');
+            Route::get('/subscription/payment-quote', [BusinessPaymentController::class, 'quote'])
+                ->middleware(['tenant.permission:settings.manage','throttle:30,1'])->name('subscription.payments.quote');
             Route::post('/subscription/payments', [BusinessPaymentController::class, 'store'])
                 ->middleware(['tenant.permission:settings.manage', 'throttle:5,1'])->name('subscription.payments.store');
             Route::get('/subscription/payments/{payment}/evidence', [BusinessPaymentController::class, 'receipt'])

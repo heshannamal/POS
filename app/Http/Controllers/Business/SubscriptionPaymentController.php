@@ -10,6 +10,7 @@ use App\Models\Plan;
 use App\Models\SubscriptionPaymentRequest;
 use App\Models\Tenant;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -19,6 +20,29 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class SubscriptionPaymentController extends Controller
 {
+    public function quote(Request $request, Tenant $tenant, BillingInvoicing $invoices): JsonResponse
+    {
+        $data = $request->validate([
+            'plan_id' => ['required', 'integer', 'exists:plans,id'],
+            'billing_cycle' => ['required', Rule::in(['monthly','yearly'])],
+            'coupon_code' => ['nullable','string','max:40','regex:/^[A-Za-z0-9_-]+$/'],
+        ]);
+        $plan = Plan::whereKey($data['plan_id'])->where('is_active',true)
+            ->where('is_public',true)->firstOrFail();
+        $quote = $invoices->quote($tenant,$plan,$data['billing_cycle'],$data['coupon_code']??null);
+
+        return response()->json([
+            'currency'=>$plan->currency,
+            'list_price_minor'=>$quote['list_price_minor'],
+            'plan_discount_minor'=>$quote['plan_discount_minor'],
+            'coupon_discount_minor'=>$quote['coupon_discount_minor'],
+            'tax_basis_points'=>$quote['tax_basis_points'],
+            'tax_minor'=>$quote['tax_minor'],
+            'total_minor'=>$quote['total_minor'],
+            'note'=>'Estimate only. Final amount is recalculated at submission and remains subject to independent verification.',
+        ]);
+    }
+
     public function store(Request $request, Tenant $tenant): RedirectResponse
     {
         $data = $request->validate([

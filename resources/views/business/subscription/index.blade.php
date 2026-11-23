@@ -80,7 +80,8 @@
                     </table>
                 </div>
                 <form method="POST" action="{{ route('business.subscription.payments.store',$tenant) }}"
-                      enctype="multipart/form-data" class="form-stack" style="margin-top:17px">
+                      enctype="multipart/form-data" class="form-stack" style="margin-top:17px"
+                      data-billing-quote-url="{{ route('business.subscription.payments.quote',$tenant) }}">
                     @csrf
                     <label for="payment_plan_id">Subscription plan</label>
                     <select name="plan_id" id="payment_plan_id" required>
@@ -96,6 +97,7 @@
                     <label for="coupon_code">Discount code (optional)</label>
                     <input name="coupon_code" id="coupon_code" maxlength="40" pattern="[A-Za-z0-9_-]+" value="{{ old('coupon_code') }}" placeholder="WELCOME10">
                     <p class="muted">The final payable amount includes applicable plan discounts, coupon savings, and configured subscription tax. A coupon never activates a subscription without verification.</p>
+                    <div id="billing-quote" class="hint-box" aria-live="polite" role="status">Choose a plan and billing period to calculate the final invoice amount.</div>
                     <label for="customer_reference">Your bank transaction reference (optional)</label>
                     <input id="customer_reference" name="customer_reference" maxlength="120" value="{{ old('customer_reference') }}" placeholder="Receipt/transfer reference">
                     <label for="evidence">Attach bank transfer receipt or payment evidence *</label>

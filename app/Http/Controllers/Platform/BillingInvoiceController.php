@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\BillingInvoice;
 use App\Models\BillingRefund;
+use App\Models\CommunicationRule;
+use App\Models\CommunicationTemplate;
 use App\Models\PlatformSetting;
 use App\Services\BillingMoney;
 use App\Services\BillingPdf;
@@ -137,6 +139,11 @@ class BillingInvoiceController extends Controller
         }
         if (PlatformSetting::valueFor('communications.email_enabled','0')!=='1') {
             throw ValidationException::withMessages(['invoice'=>'Enable Phase 5 email delivery and configure recipients first.']);
+        }
+        $rule = CommunicationRule::where('event_key','billing.invoice_issued')->first();
+        $template = CommunicationTemplate::where('event_key','billing.invoice_issued')->first();
+        if (! $rule?->is_enabled || ! $rule->send_email || ! $rule->to_owner || ! $template?->is_active) {
+            throw ValidationException::withMessages(['invoice'=>'Enable the Invoice Issued email rule, owner recipient and template in Communication Center first.']);
         }
         $center->emit('billing.invoice_issued',$invoice->tenant,$request->user(),[
             'platform_name'=>config('app.name','POS Cloud'),
