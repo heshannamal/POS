@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\PosProduct;
+use App\Models\PosCategory;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\CreateTenant;
@@ -168,6 +169,40 @@ class Phase9DeviceIntegrationTest extends TestCase
             'platform'=>'desktop',
         ])->assertUnprocessable();
         $this->assertDatabaseMissing('pos_api_devices',['user_id'=>$admin->id]);
+    }
+
+    public function test_desktop_category_filters_and_cross_tenant_category_ids_are_isolated(): void
+    {
+        $f=$this->fixture();
+        $otherOwner=User::factory()->create();
+        $other=app(CreateTenant::class)->handle($otherOwner,['name'=>'Different Category Store']);
+        $ourCategory=PosCategory::create([
+            'tenant_id'=>$f['tenant']->id,'name'=>'Beverages','slug'=>'beverages',
+        ]);
+        $otherCategory=PosCategory::create([
+            'tenant_id'=>$other->id,'name'=>'Private Category','slug'=>'private',
+        ]);
+        PosProduct::create([
+            'tenant_id'=>$f['tenant']->id,'category_id'=>$ourCategory->id,
+            'name'=>'Water Bottle','sku'=>'WAT-001','barcode'=>'4790001234567',
+            'price_minor'=>12500,'track_stock'=>false,'is_active'=>true,
+        ]);
+        PosProduct::create([
+            'tenant_id'=>$f['tenant']->id,'name'=>'Simple Service','sku'=>'SRV-001',
+            'price_minor'=>8000,'track_stock'=>false,'is_active'=>true,
+        ]);
+        $token=$this->deviceLogin($f['owner'],$f['tenant'])['token'];
+        $uri='/api/v1/tenants/'.$f['tenant']->slug;
+        $this->withHeaders($this->headers($token))
+            ->getJson($uri.'/categories')->assertOk()->assertJsonCount(1,'data')
+            ->assertJsonPath('data.0.name','Beverages');
+        $this->withHeaders($this->headers($token))
+            ->getJson($uri.'/products?branch_id='.$f['branch']->id.'&category_id='.$ourCategory->id)
+            ->assertOk()->assertJsonPath('meta.total',1)
+            ->assertJsonPath('data.0.barcode','4790001234567');
+        $this->withHeaders($this->headers($token))
+            ->getJson($uri.'/products?branch_id='.$f['branch']->id.'&category_id='.$otherCategory->id)
+            ->assertUnprocessable()->assertJsonValidationErrors('category_id');
     }
 
 }
