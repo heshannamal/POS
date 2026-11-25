@@ -1,0 +1,32 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "POS Cloud Desktop",
+  "version": "0.1.0",
+  "identifier": "com.web7softwares.poscloud.desktop",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://127.0.0.1:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "POS Cloud Desktop",
+        "width": 1600,
+        "height": 930,
+        "minWidth": 1060,
+        "minHeight": 690,
+        "center": true,
+        "backgroundColor": "#f6f8fc"
+      }
+    ],
+    "security": { "csp": "default-src 'self'; connect-src 'self' http://ipc.localhost ipc:; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'" }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "shortDescription": "POS Cloud cashier application for Windows",
+    "category": "Business"
+  }
+}
