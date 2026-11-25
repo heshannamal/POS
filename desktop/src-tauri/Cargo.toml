@@ -1,0 +1,22 @@
+[package]
+name = "pos-cloud-desktop"
+version = "0.1.0"
+description = "POS Cloud Windows cashier application"
+authors = ["Web7 Softwares"]
+edition = "2021"
+
+[lib]
+name = "pos_cloud_desktop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+uuid = { version = "1", features = ["v4"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+url = "2"
+keyring = { version = "3", default-features = false, features = ["windows-native"] }
