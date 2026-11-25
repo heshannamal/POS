@@ -17,6 +17,7 @@ class Phase9ApiRoutesTest extends TestCase
             'api.v1.tenants.auth.logout',
             'api.v1.tenants.branches',
             'api.v1.tenants.products',
+            'api.v1.tenants.categories',
             'api.v1.tenants.stock',
             'api.v1.tenants.registers',
             'api.v1.tenants.sales',
@@ -41,7 +42,7 @@ class Phase9ApiRoutesTest extends TestCase
             $this->assertContains('api.device:pos.shifts.operate',
                 Route::getRoutes()->getByName($name)->gatherMiddleware(),$name);
         }
-        foreach(['api.v1.tenants.sales.store','api.v1.tenants.sync.stock','api.v1.tenants.products'] as $name){
+        foreach(['api.v1.tenants.sales.store','api.v1.tenants.sync.stock','api.v1.tenants.products','api.v1.tenants.categories'] as $name){
             $this->assertContains('api.device:pos.sales',
                 Route::getRoutes()->getByName($name)->gatherMiddleware(),$name);
         }
