@@ -32,11 +32,20 @@ class StoreDataController extends Controller
         return response()->json(['data'=>$branches]);
     }
 
+    public function categories(Request $request,Tenant $tenant)
+    {
+        $rows=DB::table('pos_categories')
+            ->where('tenant_id',$tenant->id)->orderBy('name')
+            ->get(['id','name','slug']);
+        return response()->json(['data'=>$rows]);
+    }
+
     public function products(Request $request,Tenant $tenant)
     {
         $data=$request->validate([
             'branch_id'=>['required','integer',Rule::exists('branches','id')->where('tenant_id',$tenant->id)],
             'search'=>'nullable|string|max:120',
+            'category_id'=>['nullable','integer',Rule::exists('pos_categories','id')->where('tenant_id',$tenant->id)],
             'updated_after'=>'nullable|date',
             'per_page'=>'nullable|integer|min:1|max:100',
             'page'=>'nullable|integer|min:1',
@@ -44,6 +53,7 @@ class StoreDataController extends Controller
         app(PosBranchAccess::class)->ensure($request->user(),$tenant,(int)$data['branch_id']);
         $q=PosProduct::where('tenant_id',$tenant->id)->where('is_active',true)
             ->whereNull('deleted_at')
+            ->when(!empty($data['category_id']),fn($q)=>$q->where('category_id',$data['category_id']))
             ->when(!empty($data['search']),function($q)use($data){
                 $s=trim($data['search']);
                 $q->where(fn($w)=>$w->where('name','like',"%{$s}%")
@@ -55,6 +65,7 @@ class StoreDataController extends Controller
         return response()->json([
             'data'=>$q->getCollection()->map(fn($p)=>[
                 'id'=>$p->id,'name'=>$p->name,'sku'=>$p->sku,'barcode'=>$p->barcode,
+                'category_id'=>$p->category_id,
                 'price_minor'=>$p->price_minor,'track_stock'=>(bool)$p->track_stock,
                 'quantity'=>(int)($p->stocks->first()?->quantity??0),
                 'updated_at'=>$p->updated_at?->toIso8601String(),
