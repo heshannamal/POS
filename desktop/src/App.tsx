@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent, KeyboardEvent } from 'react';
 import {
-  Activity, ArrowDownLeft, ArrowLeft, ArrowRight, BarChart3, Barcode, Bell, Box, Check,
-  CheckCircle2, ChevronDown, CircleAlert, Clock3, Cloud, CreditCard, Grid2X2, Hold,
+  Activity, ArrowLeft, ArrowRight, BarChart3, Barcode, Box, Check,
+  CheckCircle2, ChevronDown, CircleAlert, Clock3, Cloud, CreditCard, Grid2X2,
   LayoutDashboard, List, Loader2, LogOut, Menu, Minus, Moon, Package, Pause, Plus,
   Printer, Receipt, RefreshCw, Search, Settings, ShieldCheck, ShoppingBag, ShoppingCart,
   SlidersHorizontal, Store, Sun, Trash2, Wallet, Wifi, WifiOff, X
@@ -557,7 +557,7 @@ function App() {
               </div>
             </div>
             {held.filter(h => h.branch_id === branchId).length > 0 && <div className="held-sales">
-              <h3><Hold size={16}/> Held sales · This session only</h3>
+              <h3><Pause size={16}/> Held sales · This session only</h3>
               {held.filter(h => h.branch_id === branchId).map(h => <button key={h.id} onClick={() => resumeHeld(h.id)}>
                 {h.name} <span>Resume <ArrowRight size={14}/></span></button>)}
             </div>}
