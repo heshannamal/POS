@@ -84,3 +84,9 @@ A [versioned Laravel Sanctum device API](docs/PHASE9-SHARED-API.md) is provided 
 
 ### Phase 9.6 — Stabilization and desktop groundwork
 [Shared cashier shift service and API, browser device management, strict checkout retry fingerprints, and online-only sync manifest](docs/PHASE9-6-API-STABILIZATION.md). Phase 9.6 CI now passes the full 135-test suite, API tests, MySQL 8.4 migrations and asset build. Validate on your own staging server and run concurrent multi-device acceptance tests before public deployment.
+
+## Phase 10 — Windows Desktop POS (online-first)
+
+The [Windows cashier app](desktop/README.md) is now implemented in `desktop/` using Tauri 2, Rust, React and TypeScript. The selected light retail POS layout includes a product grid and category tabs, a right-side cart, cash checkout with idempotent retry, cashier shifts, branch assignments, barcode/SKU search, receipts, keyboard shortcuts, settings, and device-specific token security. It uses the existing Laravel API and does not connect to MySQL directly.
+
+See [Phase 10 implementation and verification](docs/PHASE10-DESKTOP-POS.md). Offline sales, card payment, native ESC/POS printing, updates and final installer signing are deferred pending hardware and deployment testing.
