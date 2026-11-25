@@ -32,6 +32,7 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
 
             Route::middleware('api.device:pos.sales')->group(function (): void {
                 Route::get('/products',[StoreDataController::class,'products'])->name('products');
+                Route::get('/categories',[StoreDataController::class,'categories'])->name('categories');
                 Route::get('/stock',[StoreDataController::class,'stock'])->name('stock');
                 Route::get('/registers',[StoreDataController::class,'registers'])->name('registers');
 
