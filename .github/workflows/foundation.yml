@@ -42,6 +42,19 @@ jobs:
           npm install --no-audit --no-fund
           npm run build
 
+  desktop-webview:
+    name: Desktop React typecheck and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install desktop dependencies
+        run: npm install --prefix desktop --no-audit --no-fund
+      - name: Typecheck and bundle desktop UI
+        run: npm run build --prefix desktop
+
   mysql-migrations:
     name: MySQL 8.4 migrations
     runs-on: ubuntu-latest
